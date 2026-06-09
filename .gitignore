@@ -31,3 +31,89 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# ====================
+# 1. 编译产物
+# ====================
+# Java 编译生成的字节码文件
+*.class
+# Maven 的默认输出目录
+target/
+# Gradle 的默认输出目录
+build/
+.gradle/
+
+# ====================
+# 2. 日志文件
+# ====================
+*.log
+logs/
+
+# ====================
+# 3. 开发工具 & IDE 配置
+# ====================
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+out/
+
+# Eclipse
+.settings/
+.project
+.classpath
+bin/
+
+# NetBeans
+nbbuild/
+dist/
+nbdist/
+nbactions.xml
+nb-configuration.xml
+
+# VS Code
+.vscode/
+
+# 其他IDE生成的临时文件
+.mtj.tmp/
+*.swp
+*~
+*.tmp
+
+# ====================
+# 4. 项目构建工具
+# ====================
+# Maven (除wrapper的jar文件外)
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+
+# Gradle (除wrapper的jar文件外)
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+
+# 通用的依赖目录
+node_modules/
+package-lock.json
+
+# ====================
+# 5. 操作系统生成文件
+# ====================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ====================
+# 6. 其它常见文件
+# ====================
+# JVM 崩溃日志，例如：hs_err_pid12345.log
+hs_err_pid*
+# Spring Boot 打包结构 (fat jar)
+BOOT-INF/
+# 临时文件夹
+tmp/
+# 备份或忽略文件
+*.orig
+*.bak
+*.rej

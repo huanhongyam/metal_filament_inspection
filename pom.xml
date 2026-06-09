@@ -8,11 +8,11 @@
         <version>3.4.5</version>
         <relativePath/>
     </parent>
-    <groupId>com.mmw</groupId>
-    <artifactId>metal_micro_wire_backend</artifactId>
+    <groupId>com.kunpeng</groupId>
+    <artifactId>metal_filament_inspection</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>metal_micro_wire_backend</name>
-    <description>metal_micro_wire_backend</description>
+    <name>metal_filament_inspection</name>
+    <description>metal_filament_inspection</description>
 
     <properties>
         <java.version>17</java.version>
@@ -21,6 +21,7 @@
         <mysql.version>8.0.33</mysql.version>
         <huaweicloud.sdk.version>3.1.114</huaweicloud.sdk.version>
         <hutool.version>5.8.46</hutool.version>
+        <mybatis-plus.version>3.5.10.1</mybatis-plus.version>
     </properties>
 
     <dependencies>
@@ -29,10 +30,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+        <!-- redis -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -44,6 +47,12 @@
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>${mysql.version}</version>
+        </dependency>
+        <!-- MyBatis-Plus -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-boot-starter</artifactId>
+            <version>${mybatis-plus.version}</version>
         </dependency>
 
         <!-- Lombok -->

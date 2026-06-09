@@ -1,0 +1,31 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: metal_filament_inspection
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/metal-filament-inspection?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+  data:
+    redis:
+      host: 192.168.11.128
+      port: 6379
+      password: 123321
+      lettuce:
+        pool:
+          max-active: 10
+          max-idle: 10
+          min-idle: 1
+          time-between-eviction-runs: 10s
+mybatis-plus:
+  type-aliases-package: com.kunpeng.metal_filament_inspection.domain # 别名扫描包
+logging:
+  level:
+    com:
+      kunpeng:
+        metal_filament_inspection: debug
+jwt:
+  secret: "mental_filament_inspection_backend_jwt_secret_key_2026_kunpeng"
+  expiration: 7200000
