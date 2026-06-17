@@ -29,3 +29,11 @@ logging:
 jwt:
   secret: "mental_filament_inspection_backend_jwt_secret_key_2026_kunpeng"
   expiration: 7200000
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+  packages-to-scan: com.kunpeng.metal_filament_inspection.controller
