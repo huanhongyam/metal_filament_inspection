@@ -1,6 +1,6 @@
 package com.kunpeng.metal_filament_inspection.config;
 
-import com.kunpeng.metal_filament_inspection.interceptor.UserInterceptor;
+import com.kunpeng.metal_filament_inspection.interceptor.JwtTokenInterceptor;
 import com.kunpeng.metal_filament_inspection.utils.JwtUtil;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -17,7 +17,7 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new UserInterceptor(jwtUtil))
+        registry.addInterceptor(new JwtTokenInterceptor(jwtUtil))
                 .addPathPatterns("/hi")           // 拦截请求测试
                 .excludePathPatterns("/static/**", "/error"); // 排除静态资源和错误页
     }

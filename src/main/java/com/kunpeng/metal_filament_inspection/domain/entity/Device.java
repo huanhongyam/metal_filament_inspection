@@ -1,11 +1,14 @@
 package com.kunpeng.metal_filament_inspection.domain.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
@@ -16,7 +19,8 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Device {
+@TableName("device")
+public class Device implements Serializable {
     
     /**
      * 设备状态枚举
@@ -39,7 +43,7 @@ public class Device {
     /**
      * 设备ID - 主键
      */
-
+    @TableId
     private String deviceId;
     
     /**

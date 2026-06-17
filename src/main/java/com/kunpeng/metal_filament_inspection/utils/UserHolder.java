@@ -1,8 +1,5 @@
 package com.kunpeng.metal_filament_inspection.utils;
 
-
-import com.kunpeng.metal_filament_inspection.domain.dto.UserDTO;
-
 public class UserHolder {
     private static final ThreadLocal<Long> tl = new ThreadLocal<>();
 

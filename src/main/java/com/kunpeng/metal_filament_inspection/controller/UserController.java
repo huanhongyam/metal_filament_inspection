@@ -1,23 +1,20 @@
 package com.kunpeng.metal_filament_inspection.controller;
 
 import com.kunpeng.metal_filament_inspection.domain.dto.Result;
-import com.kunpeng.metal_filament_inspection.domain.dto.UserDTO;
 import com.kunpeng.metal_filament_inspection.domain.entity.User;
-import com.kunpeng.metal_filament_inspection.domain.entity.dto.LoginFormDTO;
+import com.kunpeng.metal_filament_inspection.domain.dto.LoginFormDTO;
 import com.kunpeng.metal_filament_inspection.service.IUserService;
 import com.kunpeng.metal_filament_inspection.utils.UserHolder;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @Tag(name = "用户信息管理")
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/api/user")
 public class UserController {
     @Autowired
     private IUserService userService;

@@ -1,4 +1,4 @@
-package com.kunpeng.metal_filament_inspection.domain.entity.dto;
+package com.kunpeng.metal_filament_inspection.domain.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

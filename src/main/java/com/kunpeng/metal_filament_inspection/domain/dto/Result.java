@@ -39,6 +39,9 @@ public class Result<T> {
     public static <T> Result<T> success(T data) {
         return new Result<>(data);
     }
+    public static <T> Result<T> success() {
+        return new Result<>();
+    }
 
     public static <T> Result<T> error(String message) {
         return new Result<>(500, message);
