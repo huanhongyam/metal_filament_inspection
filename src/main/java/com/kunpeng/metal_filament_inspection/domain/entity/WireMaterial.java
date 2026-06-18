@@ -1,10 +1,13 @@
 package com.kunpeng.metal_filament_inspection.domain.entity;
 
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -15,11 +18,13 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WireMaterial {
+@TableName("wire_material")
+public class WireMaterial implements Serializable {
     
     /**
      * 批次卷序 - 主键
      */
+    @TableId
     private String batchNumber;
     
     /**

@@ -26,9 +26,7 @@ public class DeviceController {
      */
     @Operation(summary = "分页查询")
     @GetMapping("/list")
-    public Result<List<DeviceDTO>> getDeviceList(
-            @RequestParam(value = "current", defaultValue = "1") Integer current
-    ) {
+    public Result<List<DeviceDTO>> getDeviceList(@RequestParam(value = "current", defaultValue = "1") Integer current) {
         return Result.success(deviceService.listPage(current));
     }
     /**
