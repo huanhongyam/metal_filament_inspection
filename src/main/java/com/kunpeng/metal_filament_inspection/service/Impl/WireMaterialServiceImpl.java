@@ -3,14 +3,11 @@ package com.kunpeng.metal_filament_inspection.service.Impl;
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
-import com.kunpeng.metal_filament_inspection.domain.dto.DeviceDTO;
 import com.kunpeng.metal_filament_inspection.domain.dto.Result;
 import com.kunpeng.metal_filament_inspection.domain.dto.WireMaterialDTO;
-import com.kunpeng.metal_filament_inspection.domain.entity.Device;
+import com.kunpeng.metal_filament_inspection.domain.entity.User;
 import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
-import com.kunpeng.metal_filament_inspection.mapper.DeviceMapper;
 import com.kunpeng.metal_filament_inspection.mapper.WireMaterialMapper;
-import com.kunpeng.metal_filament_inspection.service.IDeviceService;
 import com.kunpeng.metal_filament_inspection.service.IUserService;
 import com.kunpeng.metal_filament_inspection.service.IWireMaterialService;
 import com.kunpeng.metal_filament_inspection.utils.SystemConstants;
@@ -36,5 +33,20 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
             return BeanUtil.copyProperties(item, WireMaterialDTO.class);
         }).toList();
         return Result.success(page);
+    }
+
+    @Override
+    public Result<Boolean> updateByBatchNumber(WireMaterialDTO wireMaterialDTO, String batchNumber) {
+        User user = userService.getById(UserHolder.getUser());
+        Integer roleId = user.getRoleId();
+        String userName = user.getUserName();
+        // 验证管理员权限（不包括Root用户）
+        if (roleId != 1) {
+            return Result.error("权限不足，仅管理员可操作");
+        }
+        log.info("管理员{}更新线材信息，批次号：{}", userName, batchNumber);
+        WireMaterial wireMaterial = BeanUtil.copyProperties(wireMaterialDTO, WireMaterial.class);
+        updateById(wireMaterial);
+        return Result.success();
     }
 }

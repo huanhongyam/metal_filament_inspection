@@ -1,5 +1,6 @@
 package com.kunpeng.metal_filament_inspection.service.Impl;
 
+import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.kunpeng.metal_filament_inspection.domain.dto.Result;
 import com.kunpeng.metal_filament_inspection.domain.entity.User;
@@ -30,8 +31,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper,User> implements IUs
         Long id = user.getId();
         String password = user.getPassword();
         String userName = user.getUserName();
+        boolean checkpw = BCrypt.checkpw(passwd,password);
         // 校验密码若不一致抛出错误
-        if (passwd == null || !passwd.equals(password)){
+        if (!checkpw){
             return Result.error("密码错误");
         }
         String token = jwtUtil.generateToken(id,userName);
