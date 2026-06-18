@@ -1,14 +1,23 @@
 package com.kunpeng.metal_filament_inspection;
 
 import cn.hutool.crypto.digest.BCrypt;
+import com.kunpeng.metal_filament_inspection.controller.TestController;
 import com.kunpeng.metal_filament_inspection.domain.dto.LoginFormDTO;
+import com.kunpeng.metal_filament_inspection.domain.dto.Result;
+import com.kunpeng.metal_filament_inspection.domain.dto.WireMaterialDTO;
+import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
 import com.kunpeng.metal_filament_inspection.service.IUserService;
+import com.kunpeng.metal_filament_inspection.service.IWireMaterialService;
+import com.kunpeng.metal_filament_inspection.utils.IdWorker;
 import com.kunpeng.metal_filament_inspection.utils.JwtUtil;
+import com.kunpeng.metal_filament_inspection.utils.SystemConstants;
 import io.jsonwebtoken.Claims;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.annotation.Id;
+
 @Slf4j
 @SpringBootTest
 class MetalFilamentInspectionApplicationTests {
@@ -16,9 +25,15 @@ class MetalFilamentInspectionApplicationTests {
     private JwtUtil jwtUtil;
     @Autowired
     private IUserService userService;
-
+    @Autowired
+    private TestController testController;
+    @Autowired
+    private IdWorker idWorker;
+    @Autowired
+    private IWireMaterialService wireMaterialService;
     @Test
     void contextLoads() {
+        log.info("{}",testController.test());
     }
     @Test
     void testParse(){
@@ -42,6 +57,22 @@ class MetalFilamentInspectionApplicationTests {
                 .account("mali@example.com")
                 .passwd("123456")
                 .build();
-        userService.login(login);
+        log.info("{}",userService.login(login));
     }
+    @Test
+    void testId(){
+        Long l = idWorker.generateId("test");
+        log.info("{}",l);
+    }
+//    @Test
+//    void testIdWMBatchNumber(){
+//        for (int i = 0; i < 300; i++) {
+//            WireMaterialDTO wireMaterial = WireMaterialDTO.builder()
+//                    .newBatchNumber(idWorker.generateId(SystemConstants.WIRE_MATERIAL_PREFIX))
+//                    .build();
+//            String i1 = String.format("%03d", i);
+//            String batchNumber = "BATCH-20260610-0" + i1;
+//            wireMaterialService.updateByBatchNumber(wireMaterial,batchNumber);
+//        }
+//    }
 }

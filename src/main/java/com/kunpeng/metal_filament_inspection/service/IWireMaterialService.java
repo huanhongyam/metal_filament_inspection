@@ -14,5 +14,6 @@ import java.util.List;
 public interface IWireMaterialService extends IService<WireMaterial> {
     Result<List<WireMaterialDTO>> listPage(Integer current);
 
+
     Result<Boolean> updateByBatchNumber(@Valid WireMaterialDTO wireMaterialDTO, @NotBlank(message = "批次号不能为空") String batchNumber);
 }

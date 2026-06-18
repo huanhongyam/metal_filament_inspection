@@ -1,5 +1,6 @@
 package com.kunpeng.metal_filament_inspection.domain.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
@@ -24,9 +25,8 @@ public class WireMaterial implements Serializable {
     /**
      * 批次卷序 - 主键
      */
-    @TableId
-    private String batchNumber;
-    
+    @TableId(type = IdType.INPUT)
+    private Long batchNumber;
     /**
      * 设备ID
      */

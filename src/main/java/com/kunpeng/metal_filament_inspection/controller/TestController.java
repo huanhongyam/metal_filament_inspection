@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "测试接口")
 @RestController
 public class TestController {
-    @GetMapping("/hi")
-    public Result testApi(){
-        return new Result("测试接口 hello World");
+    @GetMapping("/test")
+    public Result<String> test() {
+        return Result.success("hello");
     }
 }

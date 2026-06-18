@@ -22,8 +22,7 @@ public class WireMaterialDTO {
     /**
      * 批次卷序
      */
-    private String batchNumber;
-
+    private Long batchNumber;
     /**
      * 设备ID
      */

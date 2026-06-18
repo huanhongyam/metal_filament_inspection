@@ -3,19 +3,15 @@ package com.kunpeng.metal_filament_inspection.controller;
 import cn.hutool.core.bean.BeanUtil;
 import com.kunpeng.metal_filament_inspection.domain.dto.Result;
 import com.kunpeng.metal_filament_inspection.domain.dto.WireMaterialDTO;
-import com.kunpeng.metal_filament_inspection.domain.entity.User;
 import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
 import com.kunpeng.metal_filament_inspection.service.IWireMaterialService;
-import com.kunpeng.metal_filament_inspection.service.Impl.UserServiceImpl;
-import com.kunpeng.metal_filament_inspection.utils.UserHolder;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -43,7 +39,7 @@ public class WireMaterialController {
     @Operation(summary = "根据批次号查询线材")
     @GetMapping("/info/{batchNumber}")
     public Result<WireMaterialDTO> getWireMaterialByBatchNumber(
-            @PathVariable @NotBlank(message = "批次号不能为空") String batchNumber) {
+            @PathVariable @NotNull(message = "批次号不能为空") Long batchNumber) {
         log.info("查询线材信息，批次号：{}", batchNumber);
         WireMaterial wireMaterial = wireMaterialService.query().eq("batch_number", batchNumber).one();
         return Result.success(BeanUtil.copyProperties(wireMaterial, WireMaterialDTO.class));

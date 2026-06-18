@@ -1,6 +1,8 @@
 package com.kunpeng.metal_filament_inspection.service.Impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.kunpeng.metal_filament_inspection.domain.dto.Result;
@@ -45,8 +47,10 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
             return Result.error("权限不足，仅管理员可操作");
         }
         log.info("管理员{}更新线材信息，批次号：{}", userName, batchNumber);
+        UpdateWrapper<WireMaterial> updateWrapper = Wrappers.update();
+        updateWrapper.eq("batch_number", batchNumber);
         WireMaterial wireMaterial = BeanUtil.copyProperties(wireMaterialDTO, WireMaterial.class);
-        updateById(wireMaterial);
-        return Result.success();
+        boolean isUpdate = update(wireMaterial, updateWrapper);
+        return Result.success(isUpdate);
     }
 }
