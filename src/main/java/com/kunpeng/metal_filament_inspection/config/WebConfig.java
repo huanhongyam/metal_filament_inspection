@@ -18,6 +18,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new JwtTokenInterceptor(jwtUtil))
+                .addPathPatterns("/api/user/username")
                 .addPathPatterns("/hi")           // 拦截请求测试
                 .excludePathPatterns("/static/**", "/error"); // 排除静态资源和错误页
     }

@@ -7,11 +7,13 @@ import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
 import com.kunpeng.metal_filament_inspection.service.IWireMaterialService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -53,5 +55,13 @@ public class WireMaterialController {
             @PathVariable @NotBlank(message = "批次号不能为空") String batchNumber,
             @Valid @RequestBody WireMaterialDTO wireMaterialDTO) {
         return wireMaterialService.updateByBatchNumber(wireMaterialDTO,batchNumber);
+    }
+    /**
+     * 删除线材记录
+     * 权限：管理员（roleId=1）
+     */
+    @DeleteMapping("/{batchNumber}")
+    public Result<Boolean> deleteWireMaterial(@PathVariable @NotBlank(message = "批次号不能为空") String batchNumber) {
+        return wireMaterialService.deleteById(batchNumber);
     }
 }

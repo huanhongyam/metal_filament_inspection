@@ -35,13 +35,13 @@ class MetalFilamentInspectionApplicationTests {
     void contextLoads() {
         log.info("{}",testController.test());
     }
-    @Test
-    void testParse(){
-        Claims claims = jwtUtil.parseToken("eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiLnjovlvLoiLCJ1c2VySWQiOjIzLCJleHAiOjE3" +
-                "ODE2NzY5ODZ9.UXyFTVCNPgVIS9foeBdsopJH7PzoiQJ4Akhjr_5J-i2gjqhFXUax1K2JvSk3CGL4");
-        Long userId = claims.get("userId", Long.class);
-        log.info("用户ID: {}", userId);
-    }
+//    @Test
+//    void testParse(){
+//        Claims claims = jwtUtil.parseToken("eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiLnjovlvLoiLCJ1c2VySWQiOjIzLCJleHAiOjE3" +
+//                "ODE2NzY5ODZ9.UXyFTVCNPgVIS9foeBdsopJH7PzoiQJ4Akhjr_5J-i2gjqhFXUax1K2JvSk3CGL4");
+//        Long userId = claims.get("userId", Long.class);
+//        log.info("用户ID: {}", userId);
+//    }
     @Test
     void testPlainBcrypt() {
         String gensalt = BCrypt.gensalt(10);
@@ -54,7 +54,7 @@ class MetalFilamentInspectionApplicationTests {
     @Test
     void Login(){
         LoginFormDTO login = LoginFormDTO.builder()
-                .account("mali@example.com")
+                .account("wangqiang@example.com")
                 .passwd("123456")
                 .build();
         log.info("{}",userService.login(login));

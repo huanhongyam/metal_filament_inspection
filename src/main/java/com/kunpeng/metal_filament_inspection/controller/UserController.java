@@ -47,7 +47,10 @@ public class UserController {
     @PutMapping("/username")
     public Result<Boolean> updateUsername(@RequestParam("username") String username){
         Long userId = UserHolder.getUser();
-        User user = User.builder().userName(username).build();
+        User user = User.builder()
+                .userName(username)
+                .id(userId)
+                .build();
         return Result.success(userService.updateById(user));
     }
 }

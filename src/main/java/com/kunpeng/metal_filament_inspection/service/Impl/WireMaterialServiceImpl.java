@@ -16,6 +16,7 @@ import com.kunpeng.metal_filament_inspection.utils.SystemConstants;
 import com.kunpeng.metal_filament_inspection.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,5 +53,19 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         WireMaterial wireMaterial = BeanUtil.copyProperties(wireMaterialDTO, WireMaterial.class);
         boolean isUpdate = update(wireMaterial, updateWrapper);
         return Result.success(isUpdate);
+    }
+
+    @Override
+    public Result<Boolean> deleteById(String batchNumber) {
+        Long userId = UserHolder.getUser();
+        User user = userService.getById(userId);
+        Integer roleId = user.getRoleId();
+        String userName = user.getUserName();
+        // 验证管理员权限（不包括Root用户）
+        if (roleId!=1) {
+            return Result.error("权限不足，仅管理员可操作");
+        }
+        log.info("管理员{}删除线材记录，批次号：{}", userName, batchNumber);
+        return Result.success(removeById(batchNumber));
     }
 }

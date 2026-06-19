@@ -3,6 +3,7 @@ package com.kunpeng.metal_filament_inspection.interceptor;
 import com.kunpeng.metal_filament_inspection.utils.JwtUtil;
 import com.kunpeng.metal_filament_inspection.utils.UserHolder;
 import io.jsonwebtoken.Claims;
+import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -15,10 +16,9 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @Component
 @Slf4j
 public class JwtTokenInterceptor implements HandlerInterceptor {
-    @Autowired
-    private JwtUtil jwtUtil;
-
+    private final JwtUtil jwtUtil;
     public JwtTokenInterceptor(JwtUtil jwtUtil) {
+        this.jwtUtil=jwtUtil;
     }
 
     /**
@@ -36,7 +36,7 @@ public class JwtTokenInterceptor implements HandlerInterceptor {
             return true;
         }
         //1、从请求头中获取令牌
-        String token = request.getHeader("token");
+        String token = request.getHeader("Authorization");
 
         //2、校验令牌
         try {
