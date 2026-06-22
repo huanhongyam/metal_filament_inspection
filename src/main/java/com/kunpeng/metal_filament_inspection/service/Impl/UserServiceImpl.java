@@ -31,9 +31,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper,User> implements IUs
         Long id = user.getId();
         String password = user.getPassword();
         String userName = user.getUserName();
-        boolean checkpw = BCrypt.checkpw(passwd,password);
+        boolean check = BCrypt.checkpw(passwd,password);
         // 校验密码若不一致抛出错误
-        if (!checkpw){
+        if (!check){
             return Result.error("密码错误");
         }
         String token = jwtUtil.generateToken(id,userName);

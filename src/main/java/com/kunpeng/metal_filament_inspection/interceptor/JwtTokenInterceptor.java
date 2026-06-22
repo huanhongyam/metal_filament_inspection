@@ -42,7 +42,7 @@ public class JwtTokenInterceptor implements HandlerInterceptor {
             return true;
         }
         //1、从请求头中获取令牌
-        String token = request.getHeader("Authorization");
+        String token = request.getHeader("authorization");
 
         //2、校验令牌
         try {
@@ -56,7 +56,7 @@ public class JwtTokenInterceptor implements HandlerInterceptor {
             UserHolder.setLoginUser(loginUser);
             //3、通过，放行
             return true;
-        } catch (Exception ex) {
+        } catch (Exception e) {
             //4、不通过，响应401状态码
             response.setStatus(401);
             return false;

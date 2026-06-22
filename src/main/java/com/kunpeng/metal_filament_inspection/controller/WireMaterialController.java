@@ -43,7 +43,7 @@ public class WireMaterialController {
     @Operation(summary = "根据批次号查询线材")
     @GetMapping("/info/{batchNumber}")
     public Result<WireMaterialDTO> getWireMaterialByBatchNumber(
-            @PathVariable @NotNull(message = "批次号不能为空") Long batchNumber) {
+            @PathVariable  Long batchNumber) {
         log.info("查询线材信息，批次号：{}", batchNumber);
         WireMaterial wireMaterial = wireMaterialService.query().eq("batch_number", batchNumber).one();
         return Result.success(BeanUtil.copyProperties(wireMaterial, WireMaterialDTO.class));
@@ -56,7 +56,7 @@ public class WireMaterialController {
     @Operation(summary = "更新线材信息")
     @PutMapping("/{batchNumber}")
     public Result<Boolean> updateWireMaterial(
-            @PathVariable @NotBlank(message = "批次号不能为空") Long batchNumber,
+            @PathVariable  Long batchNumber,
             @Valid @RequestBody WireMaterialDTO wireMaterialDTO) {
         return wireMaterialService.updateByBatchNumber(wireMaterialDTO,batchNumber);
     }
@@ -67,7 +67,7 @@ public class WireMaterialController {
     @RequireAdmin
     @Operation(summary = "删除线材记录")
     @DeleteMapping("/{batchNumber}")
-    public Result<Boolean> deleteWireMaterial(@PathVariable @NotBlank(message = "批次号不能为空") Long batchNumber) {
+    public Result<Boolean> deleteWireMaterial(@PathVariable Long batchNumber) {
         return wireMaterialService.deleteById(batchNumber);
     }
 
