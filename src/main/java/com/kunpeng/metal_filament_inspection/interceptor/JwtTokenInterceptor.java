@@ -1,5 +1,7 @@
 package com.kunpeng.metal_filament_inspection.interceptor;
 
+import com.kunpeng.metal_filament_inspection.domain.dto.LoginUser;
+import com.kunpeng.metal_filament_inspection.service.IUserService;
 import com.kunpeng.metal_filament_inspection.utils.JwtUtil;
 import com.kunpeng.metal_filament_inspection.utils.UserHolder;
 import io.jsonwebtoken.Claims;
@@ -16,10 +18,14 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @Component
 @Slf4j
 public class JwtTokenInterceptor implements HandlerInterceptor {
+    @Autowired
+    private IUserService userService;
     private final JwtUtil jwtUtil;
+
     public JwtTokenInterceptor(JwtUtil jwtUtil) {
-        this.jwtUtil=jwtUtil;
+        this.jwtUtil = jwtUtil;
     }
+
 
     /**
      * 校验jwt
@@ -43,8 +49,11 @@ public class JwtTokenInterceptor implements HandlerInterceptor {
             log.info("jwt校验:{}", token);
             Claims claims = jwtUtil.parseToken(token);
             Long userId = Long.valueOf(claims.get("userId").toString());
+            Integer roleId = userService.getById(userId).getRoleId();
+            LoginUser loginUser = new LoginUser(userId,roleId);
             log.info("当前用户id:{}", userId);
-            UserHolder.saveUser(userId);
+            log.info("当前用户roleId:{}", roleId);
+            UserHolder.setLoginUser(loginUser);
             //3、通过，放行
             return true;
         } catch (Exception ex) {
@@ -55,6 +64,6 @@ public class JwtTokenInterceptor implements HandlerInterceptor {
     }
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, @Nullable Exception ex) throws Exception {
-        UserHolder.removeUser();
+        UserHolder.remove();
     }
 }

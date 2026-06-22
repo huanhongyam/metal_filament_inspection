@@ -13,6 +13,5 @@ public interface IDeviceService extends IService<Device> {
 
     Result<Boolean> saveDevice(Device device);
 
-
-    Result<Boolean> removeDeviceById(String deviceId);
+    Result<Boolean> removeDeviceById(Long deviceId);
 }

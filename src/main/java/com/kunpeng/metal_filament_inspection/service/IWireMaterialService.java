@@ -15,7 +15,7 @@ public interface IWireMaterialService extends IService<WireMaterial> {
     Result<List<WireMaterialDTO>> listPage(Integer current);
 
 
-    Result<Boolean> updateByBatchNumber(@Valid WireMaterialDTO wireMaterialDTO, @NotBlank(message = "批次号不能为空") String batchNumber);
+    Result<Boolean> updateByBatchNumber(@Valid WireMaterialDTO wireMaterialDTO, @NotBlank(message = "批次号不能为空") Long batchNumber);
 
-    Result<Boolean> deleteById(@NotBlank(message = "批次号不能为空") String batchNumber);
+    Result<Boolean> deleteById(@NotBlank(message = "批次号不能为空") Long batchNumber);
 }

@@ -50,9 +50,10 @@ public class WireMaterialController {
      * 更新线材信息
      * 权限：管理员（roleId=1）
      */
+    @Operation(summary = "更新线材信息")
     @PutMapping("/{batchNumber}")
     public Result<Boolean> updateWireMaterial(
-            @PathVariable @NotBlank(message = "批次号不能为空") String batchNumber,
+            @PathVariable @NotBlank(message = "批次号不能为空") Long batchNumber,
             @Valid @RequestBody WireMaterialDTO wireMaterialDTO) {
         return wireMaterialService.updateByBatchNumber(wireMaterialDTO,batchNumber);
     }
@@ -60,8 +61,10 @@ public class WireMaterialController {
      * 删除线材记录
      * 权限：管理员（roleId=1）
      */
+    @Operation(summary = "删除线材记录")
     @DeleteMapping("/{batchNumber}")
-    public Result<Boolean> deleteWireMaterial(@PathVariable @NotBlank(message = "批次号不能为空") String batchNumber) {
+    public Result<Boolean> deleteWireMaterial(@PathVariable @NotBlank(message = "批次号不能为空") Long batchNumber) {
         return wireMaterialService.deleteById(batchNumber);
     }
+
 }

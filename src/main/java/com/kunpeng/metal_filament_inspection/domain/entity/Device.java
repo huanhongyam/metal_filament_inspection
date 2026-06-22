@@ -44,7 +44,7 @@ public class Device implements Serializable {
      * 设备ID - 主键
      */
     @TableId
-    private String deviceId;
+    private Long deviceId;
     
     /**
      * 设备代码（用于匹配批次号中的机器号13-14位）

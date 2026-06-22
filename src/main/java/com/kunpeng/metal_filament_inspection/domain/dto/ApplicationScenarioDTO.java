@@ -1,30 +1,24 @@
-package com.kunpeng.metal_filament_inspection.domain.entity;
+package com.kunpeng.metal_filament_inspection.domain.dto;
 
-
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 应用场景实体类 - 存储线材应用场景的标准规范
+ * 应用场景响应DTO
  */
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ApplicationScenario implements Serializable {
+public class ApplicationScenarioDTO {
     
     /**
-     * 应用场景编号 - 主键（固定两位数字字符串）
+     * 应用场景编号
      */
-    @TableId(type = IdType.AUTO)
     private Long scenarioCode;
     
     /**
@@ -33,7 +27,7 @@ public class ApplicationScenario implements Serializable {
     private String scenarioName;
     
     /**
-     * 线材类型（Cu、Al、Ni、Ti、Zn）
+     * 线材类型
      */
     private String wireType;
     
@@ -80,12 +74,11 @@ public class ApplicationScenario implements Serializable {
     /**
      * 创建时间
      */
-    @Builder.Default
-    private LocalDateTime createTime = LocalDateTime.now();
+    private LocalDateTime createTime;
     
     /**
      * 更新时间
      */
-    @Builder.Default
-    private LocalDateTime updateTime = LocalDateTime.now();
+    private LocalDateTime updateTime;
+
 } 

@@ -1,5 +1,6 @@
 package com.kunpeng.metal_filament_inspection.controller;
 
+import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
 import com.kunpeng.metal_filament_inspection.domain.dto.Result;
 import com.kunpeng.metal_filament_inspection.domain.entity.User;
 import com.kunpeng.metal_filament_inspection.domain.dto.LoginFormDTO;
@@ -21,6 +22,7 @@ public class UserController {
     /**
      * 登录功能
      */
+    @Operation(summary = "登录功能")
     @PostMapping("/login")
     public Result<String> login(@RequestBody LoginFormDTO loginForm){
         // 实现登录功能
@@ -30,7 +32,7 @@ public class UserController {
     @GetMapping("/me")
     public Result<Long> me(){
         // 获取当前登录的用户Id并返回
-        Long user = UserHolder.getUser();
+        Long user = UserHolder.getUserId();
         return Result.success(user);
     }
     @Operation(summary = "根据ID查找用户信息")
@@ -39,6 +41,7 @@ public class UserController {
         return Result.success(userService.getById(id));
     }
     @Operation(summary = "根据ID批量删除用户")
+    @RequireAdmin
     @DeleteMapping()
     public Result<Boolean> deleteUserById(@RequestParam List<Long> ids){
         return Result.success(userService.removeBatchByIds(ids));
@@ -46,7 +49,7 @@ public class UserController {
     @Operation(summary = "修改用户名")
     @PutMapping("/username")
     public Result<Boolean> updateUsername(@RequestParam("username") String username){
-        Long userId = UserHolder.getUser();
+        Long userId = UserHolder.getUserId();
         User user = User.builder()
                 .userName(username)
                 .id(userId)

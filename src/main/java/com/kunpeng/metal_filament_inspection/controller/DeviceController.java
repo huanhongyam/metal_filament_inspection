@@ -4,8 +4,6 @@ import com.kunpeng.metal_filament_inspection.domain.dto.DeviceDTO;
 import com.kunpeng.metal_filament_inspection.domain.dto.Result;
 import com.kunpeng.metal_filament_inspection.domain.entity.Device;
 import com.kunpeng.metal_filament_inspection.service.IDeviceService;
-import com.kunpeng.metal_filament_inspection.service.IUserService;
-import com.kunpeng.metal_filament_inspection.utils.UserHolder;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +33,7 @@ public class DeviceController {
      */
     @Operation(summary = "根据ID删除设备")
     @DeleteMapping("/{deviceId}")
-    public Result<Boolean> deleteDeviceById(@PathVariable String deviceId) {
+    public Result<Boolean> deleteDeviceById(@PathVariable Long deviceId) {
         return deviceService.removeDeviceById(deviceId);
     }
     /**
@@ -44,7 +42,7 @@ public class DeviceController {
      */
     @Operation(summary = "根据ID查找设备")
     @GetMapping("/{deviceId}")
-    public Result<Device> queryDeviceById(@PathVariable String deviceId) {
+    public Result<Device> queryDeviceById(@PathVariable Long deviceId) {
         return Result.success(deviceService.getById(deviceId));
     }
     @Operation(summary = "创建设备")
