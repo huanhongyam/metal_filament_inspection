@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
+import com.kunpeng.metal_filament_inspection.domain.dto.PageDTO;
 import com.kunpeng.metal_filament_inspection.domain.dto.Result;
 import com.kunpeng.metal_filament_inspection.domain.dto.WireMaterialDTO;
 import com.kunpeng.metal_filament_inspection.domain.entity.User;
@@ -30,15 +31,19 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
     @Autowired
     private IUserService userService;
     @Override
-    public Result<List<WireMaterialDTO>> listPage(Integer current) {
+    public PageDTO listPage(Integer current) {
         PageHelper.startPage(current,SystemConstants.DEFAULT_PAGE_SIZE);
         List<WireMaterial> list = list();
-        List<WireMaterialDTO> page = list.stream().map(item -> {
+        List<WireMaterialDTO> wireMaterialDTOList = list.stream().map(item -> {
             return BeanUtil.copyProperties(item, WireMaterialDTO.class);
         }).toList();
-        return Result.success(page);
+        PageDTO pageDTO = new PageDTO<>();
+        pageDTO.setCurrentPage(current);
+        pageDTO.setPageSize(SystemConstants.DEFAULT_PAGE_SIZE);
+        pageDTO.setTotal((long) list.size());
+        pageDTO.setRecords(wireMaterialDTOList);
+        return pageDTO;
     }
-    @RequireAdmin
     @Override
     public Result<Boolean> updateByBatchNumber(WireMaterialDTO wireMaterialDTO, Long batchNumber) {
         User user = userService.getById(UserHolder.getUserId());
@@ -50,7 +55,6 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         boolean isUpdate = update(wireMaterial, updateWrapper);
         return Result.success(isUpdate);
     }
-    @RequireAdmin
     @Override
     public Result<Boolean> deleteById(Long batchNumber) {
         Long userId = UserHolder.getUserId();

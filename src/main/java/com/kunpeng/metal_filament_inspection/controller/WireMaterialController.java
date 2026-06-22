@@ -1,6 +1,8 @@
 package com.kunpeng.metal_filament_inspection.controller;
 
 import cn.hutool.core.bean.BeanUtil;
+import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
+import com.kunpeng.metal_filament_inspection.domain.dto.PageDTO;
 import com.kunpeng.metal_filament_inspection.domain.dto.Result;
 import com.kunpeng.metal_filament_inspection.domain.dto.WireMaterialDTO;
 import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
@@ -31,8 +33,8 @@ public class WireMaterialController {
      */
     @Operation(summary = "分页查询线材列表")
     @GetMapping("/list")
-    public Result<List<WireMaterialDTO>> getWireMaterialList(@RequestParam(value = "current", defaultValue = "1") Integer current) {
-        return wireMaterialService.listPage(current);
+    public Result<PageDTO> getWireMaterialList(@RequestParam(value = "current", defaultValue = "1") Integer current) {
+        return Result.success(wireMaterialService.listPage(current));
     }
     /**
      * 根据批次号查询线材信息
@@ -50,6 +52,7 @@ public class WireMaterialController {
      * 更新线材信息
      * 权限：管理员（roleId=1）
      */
+    @RequireAdmin
     @Operation(summary = "更新线材信息")
     @PutMapping("/{batchNumber}")
     public Result<Boolean> updateWireMaterial(
@@ -61,6 +64,7 @@ public class WireMaterialController {
      * 删除线材记录
      * 权限：管理员（roleId=1）
      */
+    @RequireAdmin
     @Operation(summary = "删除线材记录")
     @DeleteMapping("/{batchNumber}")
     public Result<Boolean> deleteWireMaterial(@PathVariable @NotBlank(message = "批次号不能为空") Long batchNumber) {

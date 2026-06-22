@@ -3,6 +3,7 @@ package com.kunpeng.metal_filament_inspection.controller;
 import cn.hutool.core.bean.BeanUtil;
 import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
 import com.kunpeng.metal_filament_inspection.domain.dto.ApplicationScenarioDTO;
+import com.kunpeng.metal_filament_inspection.domain.dto.PageDTO;
 import com.kunpeng.metal_filament_inspection.domain.dto.Result;
 import com.kunpeng.metal_filament_inspection.domain.entity.ApplicationScenario;
 import com.kunpeng.metal_filament_inspection.domain.entity.User;
@@ -41,14 +42,13 @@ public class ApplicationScenarioController {
      */
     @Operation(summary = "分页查询应用场景列表")
     @GetMapping("/list")
-    public Result<List<ApplicationScenarioDTO>> getScenarioList(
+    public Result<PageDTO> getScenarioList(
             @RequestParam(value = "current", defaultValue = "1") Integer current,
             @RequestParam(value = "wireType", defaultValue = "Cu") String wireType,
             @RequestParam(value = "scenarioName",required = false) String scenarioName
     ) {
-
         Long userId = UserHolder.getUserId();
-        log.info("用户{}查询应用场景列表，页码：{}，每页大小：{}，线材类型筛选：{}，名称关键词：{}", 
+        log.info("用户{}查询应用场景列表，页码：{}，每页大小：{}，线材类型筛选：{}，名称关键词：{}",
                 userId, current, SystemConstants.DEFAULT_PAGE_SIZE, wireType, scenarioName);
         return Result.success(applicationScenarioService.getScenarioList(current,wireType,scenarioName));
     }
@@ -70,6 +70,7 @@ public class ApplicationScenarioController {
      * 创建应用场景
      * 权限：仅管理员用户（roleId=1）
      */
+    @RequireAdmin
     @Operation(summary = "创建应用场景")
     @PostMapping
     public Result<Boolean> createScenario(
@@ -95,6 +96,7 @@ public class ApplicationScenarioController {
      * 权限：仅管理员用户（roleId=1）
      */
     @RequireAdmin
+    @Operation(summary = "删除应用场景")
     @DeleteMapping("/{scenarioCode}")
     public Result<Boolean> deleteScenario(
             @PathVariable @Pattern(regexp = "^\\d{2}$", message = "应用场景编号必须是数字") String scenarioCode) {

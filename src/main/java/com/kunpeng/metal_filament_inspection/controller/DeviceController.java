@@ -1,6 +1,7 @@
 package com.kunpeng.metal_filament_inspection.controller;
 
-import com.kunpeng.metal_filament_inspection.domain.dto.DeviceDTO;
+import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
+import com.kunpeng.metal_filament_inspection.domain.dto.PageDTO;
 import com.kunpeng.metal_filament_inspection.domain.dto.Result;
 import com.kunpeng.metal_filament_inspection.domain.entity.Device;
 import com.kunpeng.metal_filament_inspection.service.IDeviceService;
@@ -9,7 +10,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 @Tag(name = "设备接口")
 @Slf4j
 @RestController
@@ -24,13 +24,14 @@ public class DeviceController {
      */
     @Operation(summary = "分页查询")
     @GetMapping("/list")
-    public Result<List<DeviceDTO>> getDeviceList(@RequestParam(value = "current", defaultValue = "1") Integer current) {
+    public Result<PageDTO> getDeviceList(@RequestParam(value = "current", defaultValue = "1") Integer current) {
         return Result.success(deviceService.listPage(current));
     }
     /**
      * 根据ID删除设备
      * 权限：仅管理员用户（roleId=1）
      */
+    @RequireAdmin
     @Operation(summary = "根据ID删除设备")
     @DeleteMapping("/{deviceId}")
     public Result<Boolean> deleteDeviceById(@PathVariable Long deviceId) {

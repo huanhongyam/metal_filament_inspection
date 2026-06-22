@@ -6,13 +6,11 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
 import com.kunpeng.metal_filament_inspection.domain.dto.ApplicationScenarioDTO;
-import com.kunpeng.metal_filament_inspection.domain.dto.Result;
+import com.kunpeng.metal_filament_inspection.domain.dto.PageDTO;
 import com.kunpeng.metal_filament_inspection.domain.entity.ApplicationScenario;
-import com.kunpeng.metal_filament_inspection.domain.entity.User;
 import com.kunpeng.metal_filament_inspection.mapper.ApplicationScenarioMapper;
 import com.kunpeng.metal_filament_inspection.service.IApplicationScenarioService;
 import com.kunpeng.metal_filament_inspection.service.IUserService;
-import com.kunpeng.metal_filament_inspection.utils.BusinessException;
 import com.kunpeng.metal_filament_inspection.utils.SystemConstants;
 import com.kunpeng.metal_filament_inspection.utils.UserHolder;
 import jakarta.annotation.Resource;
@@ -32,7 +30,7 @@ public class ApplicationScenarioServiceImpl extends ServiceImpl<ApplicationScena
     private IUserService userService;
 
     @Override
-    public List<ApplicationScenarioDTO> getScenarioList(Integer current, String wireType, String scenarioName) {
+    public PageDTO getScenarioList(Integer current, String wireType, String scenarioName) {
         PageHelper.startPage(current, SystemConstants.DEFAULT_PAGE_SIZE);
         // 构建动态查询条件
         QueryWrapper<ApplicationScenario> queryWrapper = new QueryWrapper<>();
@@ -47,9 +45,13 @@ public class ApplicationScenarioServiceImpl extends ServiceImpl<ApplicationScena
         List<ApplicationScenarioDTO> page = list.stream().map(item -> {
             return BeanUtil.copyProperties(item, ApplicationScenarioDTO.class);
         }).toList();
-        return page;
+        PageDTO pageDTO = new PageDTO<>();
+        pageDTO.setRecords(page);
+        pageDTO.setPageSize(SystemConstants.DEFAULT_PAGE_SIZE);
+        pageDTO.setTotal((long) page.size());
+        pageDTO.setCurrentPage(current);
+        return pageDTO;
     }
-    @RequireAdmin
     @Override
     public Boolean createScenario(ApplicationScenarioDTO applicationScenarioDTO) {
         // 权限检查：仅管理员

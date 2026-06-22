@@ -40,8 +40,9 @@ public class UserController {
     public Result<User> queryUserById(@PathVariable("id") Long id){
         return Result.success(userService.getById(id));
     }
-    @Operation(summary = "根据ID批量删除用户")
+
     @RequireAdmin
+    @Operation(summary = "根据ID批量删除用户")
     @DeleteMapping()
     public Result<Boolean> deleteUserById(@RequestParam List<Long> ids){
         return Result.success(userService.removeBatchByIds(ids));

@@ -1,9 +1,11 @@
 package com.kunpeng.metal_filament_inspection.domain.dto;
 
-import java.util.List;
+import lombok.Data;
 
+import java.util.List;
+@Data
 public class PageDTO<T> {
-    private List<T> data;
+    private List<T> records;
     private Long total;
     private Integer currentPage;
     private Integer PageSize;

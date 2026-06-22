@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
 import com.kunpeng.metal_filament_inspection.domain.dto.DeviceDTO;
+import com.kunpeng.metal_filament_inspection.domain.dto.PageDTO;
 import com.kunpeng.metal_filament_inspection.domain.dto.Result;
 import com.kunpeng.metal_filament_inspection.domain.entity.Device;
 import com.kunpeng.metal_filament_inspection.domain.entity.User;
@@ -28,15 +29,19 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
     private IUserService userService;
 
     @Override
-    public List<DeviceDTO> listPage(Integer current) {
+    public PageDTO listPage(Integer current) {
         PageHelper.startPage(current,SystemConstants.DEFAULT_PAGE_SIZE);
         List<Device> list = list();
         List<DeviceDTO> page = list.stream().map(item -> {
             return BeanUtil.copyProperties(item, DeviceDTO.class);
         }).toList();
-        return page;
+        PageDTO pageDTO = new PageDTO<>();
+        pageDTO.setCurrentPage(current);
+        pageDTO.setRecords(page);
+        pageDTO.setTotal((long) page.size());
+        pageDTO.setPageSize(SystemConstants.DEFAULT_PAGE_SIZE);
+        return pageDTO;
     }
-    @RequireAdmin
     @Override
     public Result<Boolean> saveDevice(Device device) {
         // 1. 获取当前登录用户ID
@@ -61,7 +66,6 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
             return Result.error("创建设备失败，请稍后重试");
         }
     }
-    @RequireAdmin
     @Override
     public Result<Boolean> removeDeviceById(Long deviceId) {
         // 1. 获取当前登录用户ID
