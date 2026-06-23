@@ -20,7 +20,7 @@ public class DeviceDTO {
     /**
      * 设备ID
      */
-    private Long deviceId;
+    private String deviceId;
 
     /**
      * 设备代码

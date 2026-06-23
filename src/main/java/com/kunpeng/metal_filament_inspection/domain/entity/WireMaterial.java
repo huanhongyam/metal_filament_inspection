@@ -133,6 +133,14 @@ public class WireMaterial implements Serializable {
      */
     @Builder.Default
     private LocalDateTime createTime = LocalDateTime.now();
+    /**
+     * 批次
+     */
+    private Long batchNo;
+    /**
+     * 卷次
+     */
+    private Long rollNo;
     
     /**
      * 评估结果枚举

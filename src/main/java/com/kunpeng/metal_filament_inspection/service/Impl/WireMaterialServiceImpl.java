@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
 import com.kunpeng.metal_filament_inspection.domain.dto.PageDTO;
@@ -32,16 +33,18 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
     private IUserService userService;
     @Override
     public PageDTO listPage(Integer current) {
-        PageHelper.startPage(current,SystemConstants.DEFAULT_PAGE_SIZE);
+        PageHelper.startPage(current, SystemConstants.DEFAULT_PAGE_SIZE);
         List<WireMaterial> list = list();
-        List<WireMaterialDTO> wireMaterialDTOList = list.stream().map(item -> {
-            return BeanUtil.copyProperties(item, WireMaterialDTO.class);
-        }).toList();
+        Page<WireMaterial> page = (Page<WireMaterial>) list;
+        long total = page.getTotal();
+        List<WireMaterialDTO> records = list.stream()
+                .map(item -> BeanUtil.copyProperties(item, WireMaterialDTO.class))
+                .toList();
         PageDTO pageDTO = new PageDTO<>();
         pageDTO.setCurrentPage(current);
         pageDTO.setPageSize(SystemConstants.DEFAULT_PAGE_SIZE);
-        pageDTO.setTotal((long) list.size());
-        pageDTO.setRecords(wireMaterialDTOList);
+        pageDTO.setTotal(total);
+        pageDTO.setRecords(records);
         return pageDTO;
     }
     @Override
