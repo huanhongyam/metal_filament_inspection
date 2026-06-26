@@ -3,6 +3,7 @@ package com.kunpeng.metal_filament_inspection.service.Impl;
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
 import com.kunpeng.metal_filament_inspection.domain.dto.DeviceDTO;
 import com.kunpeng.metal_filament_inspection.domain.dto.PageDTO;
@@ -30,16 +31,17 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
 
     @Override
     public PageDTO listPage(Integer current) {
-        PageHelper.startPage(current,SystemConstants.DEFAULT_PAGE_SIZE);
+        PageHelper.startPage(current, SystemConstants.DEFAULT_PAGE_SIZE);
         List<Device> list = list();
-        List<DeviceDTO> page = list.stream().map(item -> {
-            return BeanUtil.copyProperties(item, DeviceDTO.class);
-        }).toList();
+        PageInfo<Device> pageInfo = new PageInfo<>(list);
+        List<DeviceDTO> records = list.stream()
+                .map(item -> BeanUtil.copyProperties(item, DeviceDTO.class))
+                .toList();
         PageDTO pageDTO = new PageDTO<>();
         pageDTO.setCurrentPage(current);
-        pageDTO.setRecords(page);
-        pageDTO.setTotal((long) page.size());
         pageDTO.setPageSize(SystemConstants.DEFAULT_PAGE_SIZE);
+        pageDTO.setRecords(records);
+        pageDTO.setTotal(pageInfo.getTotal());
         return pageDTO;
     }
     @Override

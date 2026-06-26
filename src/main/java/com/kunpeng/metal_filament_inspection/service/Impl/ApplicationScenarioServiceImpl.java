@@ -3,6 +3,7 @@ package com.kunpeng.metal_filament_inspection.service.Impl;
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
 import com.kunpeng.metal_filament_inspection.domain.dto.ApplicationScenarioDTO;
@@ -32,23 +33,23 @@ public class ApplicationScenarioServiceImpl extends ServiceImpl<ApplicationScena
     @Override
     public PageDTO getScenarioList(Integer current, String wireType, String scenarioName) {
         PageHelper.startPage(current, SystemConstants.DEFAULT_PAGE_SIZE);
-        // 构建动态查询条件
         QueryWrapper<ApplicationScenario> queryWrapper = new QueryWrapper<>();
         if (StringUtils.hasText(wireType)) {
-            queryWrapper.eq("wire_type", wireType);   // 精确匹配，字段名根据实际表结构调整
+            queryWrapper.eq("wire_type", wireType);
         }
         if (StringUtils.hasText(scenarioName)) {
             queryWrapper.like("scenario_name", scenarioName);
         }
-        // 执行带条件的分页查询
         List<ApplicationScenario> list = applicationScenarioMapper.selectList(queryWrapper);
-        List<ApplicationScenarioDTO> page = list.stream().map(item -> {
-            return BeanUtil.copyProperties(item, ApplicationScenarioDTO.class);
-        }).toList();
+        Page<ApplicationScenario> page = (Page<ApplicationScenario>) list;
+        long total = page.getTotal();
+        List<ApplicationScenarioDTO> records = list.stream()
+                .map(item -> BeanUtil.copyProperties(item, ApplicationScenarioDTO.class))
+                .toList();
         PageDTO pageDTO = new PageDTO<>();
-        pageDTO.setRecords(page);
+        pageDTO.setRecords(records);
         pageDTO.setPageSize(SystemConstants.DEFAULT_PAGE_SIZE);
-        pageDTO.setTotal((long) page.size());
+        pageDTO.setTotal(total);
         pageDTO.setCurrentPage(current);
         return pageDTO;
     }
