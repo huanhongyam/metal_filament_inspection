@@ -20,7 +20,7 @@ import java.util.List;
 @AllArgsConstructor
 public class WireMaterialDTO {
     /**
-     * 批次卷序
+     * ID
      */
     private Long batchNumber;
     /**
@@ -84,43 +84,30 @@ public class WireMaterialDTO {
     private String scenarioCode;
 
     /**
-     * 设备代码
-     */
-    private String deviceCode;
-
-    /**
-     * 事件发生时间
-     */
-    private LocalDateTime eventTime;
-
-    /**
      * 创建时间
      */
     private LocalDateTime createTime;
 
     /**
-     * 规则引擎评估结果
-     */
-    private WireMaterial.EvaluationResult evaluationResult;
-
-    /**
-     * 评估详情
+     * Agent评估详情
      */
     private String evaluationMessage;
 
     /**
-     * 模型评估结果
+     * Agent评估结果
      */
     private WireMaterial.EvaluationResult modelEvaluationResult;
-
     /**
-     * 模型评估置信度
+     * Agent评估置信度
      */
     private BigDecimal modelConfidence;
-
     /**
-     * 最终评估结果
+     * 批次
      */
-    private WireMaterial.FinalEvaluationResult finalEvaluationResult;
+    private Long batchNo;
+    /**
+     * 卷序
+     */
+    private Long rollNo;
 
 } 

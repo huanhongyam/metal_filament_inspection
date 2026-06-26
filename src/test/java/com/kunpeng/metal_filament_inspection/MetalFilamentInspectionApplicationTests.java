@@ -69,4 +69,9 @@ class MetalFilamentInspectionApplicationTests {
 //            wireMaterialService.updateByBatchNumber(wireMaterial,batchNumber);
 //        }
 //    }
+    @Test
+    void getAgentJwt(){
+        String s = jwtUtil.generateToken(100L, "agent");
+        log.info(s);
+    }
 }

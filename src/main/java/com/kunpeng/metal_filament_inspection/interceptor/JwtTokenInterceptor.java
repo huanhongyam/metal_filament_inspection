@@ -1,8 +1,10 @@
 package com.kunpeng.metal_filament_inspection.interceptor;
 
+import cn.hutool.core.util.StrUtil;
 import com.kunpeng.metal_filament_inspection.domain.dto.LoginUser;
 import com.kunpeng.metal_filament_inspection.service.IUserService;
 import com.kunpeng.metal_filament_inspection.utils.JwtUtil;
+import com.kunpeng.metal_filament_inspection.utils.SystemConstants;
 import com.kunpeng.metal_filament_inspection.utils.UserHolder;
 import io.jsonwebtoken.Claims;
 import jakarta.annotation.Resource;
@@ -14,6 +16,8 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
+
+import java.util.Objects;
 
 @Component
 @Slf4j
@@ -43,9 +47,13 @@ public class JwtTokenInterceptor implements HandlerInterceptor {
         }
         //1、从请求头中获取令牌
         String token = request.getHeader("authorization");
-
+        String agentToken = request.getHeader("pass4agent");
         //2、校验令牌
         try {
+            if (StrUtil.equals(agentToken, SystemConstants.AGENT_TOKEN)){
+                log.info("agent调用");
+                return true;
+            }
             log.info("jwt校验:{}", token);
             Claims claims = jwtUtil.parseToken(token);
             Long userId = Long.valueOf(claims.get("userId").toString());
