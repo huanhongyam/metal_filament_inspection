@@ -74,20 +74,9 @@ class MetalFilamentInspectionApplicationTests {
 //            wireMaterialService.updateByBatchNumber(wireMaterial,batchNumber);
 //        }
 //    }
-//    @Test
-//    void testUpdateBR() {
-//        for (int i = 3; i < 62641037155237990L-62641032860270627L; i++) {
-//            Long id = 62641032860270627L + i;
-//            WireMaterial entity = wireMaterialService.getById(id);
-//            if (entity != null) {
-//                // 设置批次（循环1-10），卷序（循环1-30）按需设计
-//                // 比如批次 = (i / 30) + 1，卷序 = (i % 30) + 1
-//                int batch = (i / 30) + 1;
-//                int roll = (i % 30) + 1;
-//                entity.setBatchNo((long) batch);
-//                entity.setRollNo((long) roll);
-//                wireMaterialService.updateById(entity); // 使用updateById
-//          }
-//       }
-//  }
+    @Test
+    void getAgentJwt(){
+        String s = jwtUtil.generateToken(100L, "agent");
+        log.info(s);
+    }
 }
