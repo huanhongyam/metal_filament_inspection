@@ -55,3 +55,22 @@ huawei:
       access-code: "xRkCW3g6ZUJ4zDiL8CeAfnSislpvy86M"
       queue-name: "DefaultQueue"
       client-id: "backend-${random.uuid}" # 客户端唯一标识
+      auto-acknowledge: true
+yolo:
+  model-path: src/main/resources/models/best.onnx
+  confidence-threshold: 0.5
+  nms-threshold: 0.4
+  input-width: 640
+  input-height: 640
+  image-dir: "src/main/resources/textPicture"
+# 七牛云存储配置
+qiniu:
+  access-key: "VbN_icwnxdmV1ZADAAi3fH_SQUn8Czyv5_TpbDH1"
+  secret-key: "-FRoyL9QtL5_j7Q_naMylGSVCSNtb6iMA3JNKBmF"
+  bucket: "metalfilamentinspection"
+  domain: "th8lfohjy.hn-bkt.clouddn.com"
+  region: "guangdong"
+  expire-seconds: 3600
+  use-https: false
+opencv:
+  library-path: "D:/opencv/build/java/x64/opencv_java4120.dll"

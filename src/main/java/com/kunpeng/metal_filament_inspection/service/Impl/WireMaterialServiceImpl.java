@@ -113,7 +113,7 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
     }
 
     @Override
-    public Result<Boolean> savewireMaterial(WireMaterialSaveDTO wireMaterialSaveDTO) {
+    public Result<Boolean> saveWireMaterial(WireMaterialSaveDTO wireMaterialSaveDTO) {
         // 保存线材检测记录并返回结果
         WireMaterial wireMaterial = BeanUtil.copyProperties(wireMaterialSaveDTO, WireMaterial.class);
         boolean isSuccess = save(wireMaterial);
@@ -125,5 +125,13 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
             log.error("创建线材检测记录成功，设备ID：{}",wireMaterial.getDeviceId());
             return Result.error("创建设备失败，请稍后重试");
         }
+    }
+
+    @Override
+    public Result<Boolean> checkByBatchNoWithRollNo(Long batchNo, Long rollNo) {
+        boolean exists = query().eq("batch_no", batchNo)
+                .eq("roll_no", rollNo)
+                .exists();
+        return Result.success(exists);
     }
 }
