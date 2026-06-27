@@ -27,7 +27,7 @@ public class AmqpClientOptions {
 
     private String instanceId = "default";
 
-    private boolean autoAcknowledge = true;
+    private boolean autoAcknowledge;
 
     private String clientId = "backend-service-1";
 

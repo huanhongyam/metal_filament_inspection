@@ -84,6 +84,16 @@ public class WireMaterialController {
     @Operation(summary = "创建设备")
     @PostMapping
     public Result<Boolean> createDevice(@RequestBody WireMaterialSaveDTO wireMaterialSaveDTO) {
-        return wireMaterialService.savewireMaterial(wireMaterialSaveDTO);
+        return wireMaterialService.saveWireMaterial(wireMaterialSaveDTO);
+    }
+    /**
+     * 根据批次卷序查询线材是否存在
+     * 权限：无需认证（公开接口）
+     */
+    @Operation(summary = "根据批次卷序查询线材是否存在")
+    @GetMapping("/check")
+    public Result<Boolean> checkWireMaterialByBatchNoWithRollNo(
+            @RequestParam  Long batchNo,@RequestParam Long rollNo) {
+        return wireMaterialService.checkByBatchNoWithRollNo(batchNo,rollNo);
     }
 }

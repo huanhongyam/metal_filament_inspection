@@ -17,5 +17,7 @@ public interface IWireMaterialService extends IService<WireMaterial> {
 
     PageDTO listPage(Integer current);
 
-    Result<Boolean> savewireMaterial(WireMaterialSaveDTO wireMaterialSaveDTO);
+    Result<Boolean> saveWireMaterial(WireMaterialSaveDTO wireMaterialSaveDTO);
+
+    Result<Boolean> checkByBatchNoWithRollNo(Long batchNo, Long rollNo);
 }
