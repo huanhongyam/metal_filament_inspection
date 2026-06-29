@@ -3,6 +3,9 @@ package com.kunpeng.metal_filament_inspection;
 import cn.hutool.crypto.digest.BCrypt;
 import com.kunpeng.metal_filament_inspection.controller.TestController;
 import com.kunpeng.metal_filament_inspection.domain.dto.LoginFormDTO;
+import com.kunpeng.metal_filament_inspection.domain.dto.PageDTO;
+import com.kunpeng.metal_filament_inspection.domain.dto.WireMaterialDTO;
+import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
 import com.kunpeng.metal_filament_inspection.service.IUserService;
 import com.kunpeng.metal_filament_inspection.service.IWireMaterialService;
 import com.kunpeng.metal_filament_inspection.utils.IdWorker;
@@ -18,6 +21,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
+import java.util.List;
 
 @Slf4j
 @SpringBootTest
