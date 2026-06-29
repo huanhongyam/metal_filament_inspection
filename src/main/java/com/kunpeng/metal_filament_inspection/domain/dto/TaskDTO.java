@@ -6,7 +6,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
-public class DetectTaskDTO implements Serializable {
+public class TaskDTO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     // 硬件端上报的两个时间字段

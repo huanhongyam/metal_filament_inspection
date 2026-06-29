@@ -56,6 +56,11 @@ huawei:
       queue-name: "DefaultQueue"
       client-id: "backend-${random.uuid}" # 客户端唯一标识
       auto-acknowledge: true
+    app:
+      ak: "HPUA69LJ2GT1NKLAEMS9"
+      sk: "QAocumBao0UyRrKtRCYdxXZ1O4ToPZi5QseDeXH0"
+      endpoint: "f09fb0e0e6.st1.iotda-app.cn-east-3.myhuaweicloud.com"
+      projectId: "019e966a305f765cb9bd8e6b650effc1"
 yolo:
   model-path: src/main/resources/models/best.onnx
   confidence-threshold: 0.5

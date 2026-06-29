@@ -1,4 +1,4 @@
-package com.kunpeng.metal_filament_inspection.amqp;
+package com.kunpeng.metal_filament_inspection.config;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -9,7 +9,7 @@ import org.springframework.validation.annotation.Validated;
 @Data
 @Validated
 @ConfigurationProperties(prefix = "huawei.iot.amqp")
-public class AmqpClientOptions {
+public class AmqpClientConfig {
 
     @NotBlank(message = "接入地址不能为空")
     private String host;

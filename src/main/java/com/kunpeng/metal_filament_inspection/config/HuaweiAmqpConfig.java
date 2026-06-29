@@ -1,6 +1,5 @@
 package com.kunpeng.metal_filament_inspection.config;
 
-import com.kunpeng.metal_filament_inspection.amqp.AmqpClientOptions;
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.Session;
 import org.apache.qpid.jms.JmsConnectionExtensions;
@@ -15,18 +14,17 @@ import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
 import org.springframework.jms.config.JmsListenerContainerFactory;
 
 @Configuration
-@EnableConfigurationProperties(AmqpClientOptions.class)
+@EnableConfigurationProperties(AmqpClientConfig.class)
 public class HuaweiAmqpConfig {
 
-    private final AmqpClientOptions options;
+    private final AmqpClientConfig options;
 
-    public HuaweiAmqpConfig(AmqpClientOptions options) {
+    public HuaweiAmqpConfig(AmqpClientConfig options) {
         this.options = options;
     }
 
     @Bean(name = "huaweiJmsConnectionFactory")
     public ConnectionFactory huaweiJmsConnectionFactory() throws Exception {
-        // 按官方推荐添加完整参数：idleTimeout 和 saslMechanisms
         String remoteUrl = String.format("%s:%d?amqp.vhost=%s&amqp.idleTimeout=8000&amqp.saslMechanisms=PLAIN",
                 options.getHost(), options.getPort(), options.getInstanceId());
 

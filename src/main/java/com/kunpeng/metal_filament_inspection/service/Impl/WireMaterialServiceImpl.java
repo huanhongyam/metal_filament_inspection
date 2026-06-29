@@ -3,9 +3,10 @@ package com.kunpeng.metal_filament_inspection.service.Impl;
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.github.pagehelper.PageHelper;
 import com.kunpeng.metal_filament_inspection.domain.dto.*;import com.kunpeng.metal_filament_inspection.domain.entity.User;
 import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
 import com.kunpeng.metal_filament_inspection.mapper.WireMaterialMapper;
@@ -31,9 +32,8 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
     private IUserService userService;
     @Override
     public List<WireMaterialDTO> listQueryPage(Integer limit, WireMaterialQueryDTO queryDTO) {
-        // 1. 构建查询条件
         LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
-        // 字符串条件（精确匹配）
+        // 精确匹配
         if (StringUtils.hasText(queryDTO.getDeviceId())) {
             wrapper.eq(WireMaterial::getDeviceId, queryDTO.getDeviceId());
         }
@@ -56,20 +56,19 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         if (queryDTO.getBatchNo() != null) {
             wrapper.eq(WireMaterial::getBatchNo, queryDTO.getBatchNo());
         }
-        // 时间范围（例如查询创建时间前7天到指定时间）
+        // 查询创建时间前7天到指定时间
         if (queryDTO.getCreateTime() != null) {
             LocalDateTime end = queryDTO.getCreateTime();
             LocalDateTime start = end.minusDays(7);
             wrapper.between(WireMaterial::getCreateTime, start, end);
         }
-        // 2.限制条数（使用 last 拼接 LIMIT）
+        // 限制条数（使用 last 拼接 LIMIT）
         if (limit > 1000) limit = 1000;
         if (limit != null && limit > 0) {
             wrapper.last("LIMIT " + limit);
         }
-        // 3. 执行查询
         List<WireMaterial> entities = baseMapper.selectList(wrapper);
-        // 4. 转换为 DTO
+        // 转换为 DTO
         return entities.stream()
                 .map(entity -> {
                     WireMaterialDTO dto = new WireMaterialDTO();
@@ -98,17 +97,19 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         return Result.success(removeById(batchNumber));
     }
     @Override
-    public PageDTO listPage(Integer current) {
-        PageHelper.startPage(current,SystemConstants.DEFAULT_PAGE_SIZE);
-        List<WireMaterial> list = list();
-        List<WireMaterialQueryDTO> page = list.stream().map(item -> {
-            return BeanUtil.copyProperties(item, WireMaterialQueryDTO.class);
-        }).toList();
-        PageDTO pageDTO = new PageDTO<>();
-        pageDTO.setCurrentPage(current);
-        pageDTO.setRecords(page);
-        pageDTO.setTotal((long) page.size());
-        pageDTO.setPageSize(SystemConstants.DEFAULT_PAGE_SIZE);
+    public PageDTO<WireMaterialQueryDTO> listPage(Integer current) {
+        Page<WireMaterial> page = new Page<>(current, SystemConstants.DEFAULT_PAGE_SIZE);
+        // 执行分页查询
+        IPage<WireMaterial> pageResult = page(page, null);
+        // 转换当前页数据为 DTO
+        List<WireMaterialQueryDTO> dtoList = pageResult.getRecords().stream()
+                .map(item -> BeanUtil.copyProperties(item, WireMaterialQueryDTO.class))
+                .collect(Collectors.toList());
+        PageDTO<WireMaterialQueryDTO> pageDTO = new PageDTO<>();
+        pageDTO.setCurrentPage((int) pageResult.getCurrent());
+        pageDTO.setPageSize((int) pageResult.getSize());
+        pageDTO.setTotal(pageResult.getTotal());
+        pageDTO.setRecords(dtoList);
         return pageDTO;
     }
 

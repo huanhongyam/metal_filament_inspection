@@ -3,7 +3,6 @@ package com.kunpeng.metal_filament_inspection.controller;
 import cn.hutool.core.bean.BeanUtil;
 import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
 import com.kunpeng.metal_filament_inspection.domain.dto.*;
-import com.kunpeng.metal_filament_inspection.domain.entity.Device;
 import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
 import com.kunpeng.metal_filament_inspection.service.IWireMaterialService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,10 +23,10 @@ public class WireMaterialController {
     private IWireMaterialService wireMaterialService;
 
     /**
-     * 条件分页查询线材列表
+     * 条件查询线材列表
      * 权限：已认证用户
      */
-    @Operation(summary = "条件分页查询线材列表")
+    @Operation(summary = "条件查询线材列表")
     @PostMapping("/list-agent")
     public Result<List<WireMaterialDTO>> getWireMaterialListQuery(@RequestParam(value = "limit", defaultValue = "10" ,required = false) Integer limit,
                                                                   @RequestBody(required = false) WireMaterialQueryDTO wireMaterialDTO

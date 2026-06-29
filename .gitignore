@@ -117,3 +117,6 @@ tmp/
 *.orig
 *.bak
 *.rej
+*.png
+*.jpng
+*.onnx

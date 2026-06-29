@@ -86,7 +86,7 @@ class MetalFilamentInspectionApplicationTests {
     @Test
     public void testUploadLocalImage() throws IOException {
         // 1. 🔧 替换为您的本地绝对路径（比如 Windows: C:/Users/xxx/Desktop/test.jpg）
-        String absolutePath = "C:\\Users\\z\\Pictures\\Saved Pictures\\微信图片_20250331201543.jpg";
+        String absolutePath = "C:\\Users\\z\\Pictures\\Saved Pictures\\微信图片.jpg";
 
         // 2. 读取文件字节流
         byte[] fileBytes = Files.readAllBytes(Paths.get(absolutePath));

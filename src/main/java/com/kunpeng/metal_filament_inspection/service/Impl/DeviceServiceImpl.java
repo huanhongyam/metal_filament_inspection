@@ -1,9 +1,9 @@
 package com.kunpeng.metal_filament_inspection.service.Impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.github.pagehelper.PageHelper;
-import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
 import com.kunpeng.metal_filament_inspection.domain.dto.DeviceDTO;
 import com.kunpeng.metal_filament_inspection.domain.dto.PageDTO;
 import com.kunpeng.metal_filament_inspection.domain.dto.Result;
@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Transactional
@@ -28,18 +29,18 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
     @Autowired
     private IUserService userService;
 
-    @Override
-    public PageDTO listPage(Integer current) {
-        PageHelper.startPage(current,SystemConstants.DEFAULT_PAGE_SIZE);
-        List<Device> list = list();
-        List<DeviceDTO> page = list.stream().map(item -> {
-            return BeanUtil.copyProperties(item, DeviceDTO.class);
-        }).toList();
-        PageDTO pageDTO = new PageDTO<>();
-        pageDTO.setCurrentPage(current);
-        pageDTO.setRecords(page);
-        pageDTO.setTotal((long) page.size());
-        pageDTO.setPageSize(SystemConstants.DEFAULT_PAGE_SIZE);
+    public PageDTO<DeviceDTO> listPage(Integer current) {
+        Page<Device> page = new Page<>(current, SystemConstants.DEFAULT_PAGE_SIZE);
+        // 执行分页查询
+        IPage<Device> pageResult = page(page, null);
+        List<DeviceDTO> dtoList = pageResult.getRecords().stream()
+                .map(item -> BeanUtil.copyProperties(item, DeviceDTO.class))
+                .collect(Collectors.toList());
+        PageDTO<DeviceDTO> pageDTO = new PageDTO<>();
+        pageDTO.setCurrentPage((int) pageResult.getCurrent());
+        pageDTO.setPageSize((int) pageResult.getSize());
+        pageDTO.setTotal(pageResult.getTotal());
+        pageDTO.setRecords(dtoList);
         return pageDTO;
     }
     @Override

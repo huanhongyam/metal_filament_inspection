@@ -1,6 +1,6 @@
 package com.kunpeng.metal_filament_inspection.mq.consumer;
 
-import com.kunpeng.metal_filament_inspection.domain.dto.DetectTaskDTO;
+import com.kunpeng.metal_filament_inspection.domain.dto.TaskDTO;
 import com.kunpeng.metal_filament_inspection.domain.entity.DetectionBatch;
 import com.kunpeng.metal_filament_inspection.service.IDetectionBatchService;
 import com.kunpeng.metal_filament_inspection.utils.QiniuUploadUtil;
@@ -14,7 +14,6 @@ import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
-import org.springframework.amqp.core.ExchangeTypes;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.Exchange;
 import org.springframework.amqp.rabbit.annotation.Queue;
@@ -39,7 +38,7 @@ import java.util.stream.Stream;
 
 @Slf4j
 @Component
-public class IoTMessageConsumer {
+public class IoTYOLOConsumer {
 
     @Autowired
     private YoloUtil yoloUtil;
@@ -61,11 +60,11 @@ public class IoTMessageConsumer {
 
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue(name = "detect.queue", durable = "true"),
-            exchange = @Exchange(name = "detect.exchange", type = ExchangeTypes.DIRECT),
+            exchange = @Exchange(name = "detect.exchange"),
             key = "detect.task"
     ))
     @Transactional(rollbackFor = Exception.class)
-    public void handleDetectTask(DetectTaskDTO task, Message message) throws Exception {
+    public void handleDetectTask(TaskDTO task, Message message) throws Exception {
         Long batchNumber = task.getBatchNumber();
         log.info("🔬 开始处理检测任务: batchNumber={}, start={}, end={}",
                 batchNumber, task.getStartTime(), task.getEndTime());
@@ -125,7 +124,7 @@ public class IoTMessageConsumer {
                     Point topLeft = new Point(obj.x1, obj.y1);
                     Point bottomRight = new Point(obj.x2, obj.y2);
 
-                    // 画矩形框 (厚度设为2)
+                    // 画矩形框
                     Imgproc.rectangle(annotatedImage, topLeft, bottomRight, color, 2);
 
                     // 准备文字标签
@@ -134,7 +133,7 @@ public class IoTMessageConsumer {
                     int[] baseline = new int[1];
                     Size labelSize = Imgproc.getTextSize(label, Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, 1, baseline);
                     Point labelOrigin = new Point(obj.x1, obj.y1 - labelSize.height);
-                    // 画文字背景矩形（更好看）
+                    // 文字背景矩形
                     Imgproc.rectangle(annotatedImage,
                             new Point(obj.x1, obj.y1 - labelSize.height - baseline[0]),
                             new Point(obj.x1 + labelSize.width, obj.y1),
@@ -148,15 +147,15 @@ public class IoTMessageConsumer {
                 File annotatedFile = new File(System.getProperty("java.io.tmpdir"), "annotated_" + System.currentTimeMillis() + ".jpg");
                 Imgcodecs.imwrite(annotatedFile.getAbsolutePath(), annotatedImage);
                 annotatedImage.release(); // 释放内存
-
+                String cloudUrl = SystemConstants.DEFAULT_QINIU_URL;
                 // 2.2 上传到七牛云
-                String cloudUrl = qiniuUploadUtil.uploadImage(annotatedFile);
-
+                if((imgScratch+imgBlock+imgCluster+imgMetal+imgScuff)>0){
+                    cloudUrl = qiniuUploadUtil.uploadImage(annotatedFile);
+                }
                 // ====== 4. 上传完后删除临时文件 ======
                 if (annotatedFile.exists()) {
                     annotatedFile.delete();
                 }
-
                 // 2.3 暂存当前图片的检测数据
                 DetectionBatch detectionBatch = new DetectionBatch();
                 detectionBatch.setScratchCount(imgScratch);
@@ -165,6 +164,7 @@ public class IoTMessageConsumer {
                 detectionBatch.setMetalBurrCount(imgMetal);
                 detectionBatch.setScuffCount(imgScuff);
                 detectionBatch.setImgUrl(cloudUrl);
+                detectionBatch.setCreateTime(LocalDateTime.now());
                 detectionList.add(detectionBatch);
 
                 log.debug("📊 图片 {}: 划痕={}, 块状={}, 簇状={}, 毛刺={}, 擦伤={}",
@@ -179,17 +179,16 @@ public class IoTMessageConsumer {
         double batchAvgConf = (totalDetections == 0) ? 0.0 : (totalSumConf / totalDetections);
         log.info("📊 批次平均置信度: {}", batchAvgConf);
 
-        // ===== 4. 批量插入数据库（每张图片一条记录） =====
+        // ===== 4. 批量插入数据库（一张图片一条记录） =====
         for (DetectionBatch detection : detectionList) {
-            // 4.1 生成主键 ID
+            // 4.1 生成ID
             Long id = idWorker.generateId(SystemConstants.DETECTION_BATCH_PREFIX);
-
             // 4.2 创建记录
             detection.setId(id);
             detection.setBatchNumber(batchNumber);
             detection.setStartTime(task.getStartTime());
             detection.setEndTime(task.getEndTime());
-            detection.setTotalImages(images.size());  // 所有记录相同：本次批次总图片数
+            detection.setTotalImages(images.size());
             detection.setAvgConfidence(BigDecimal.valueOf(batchAvgConf));  // 批次平均置信度
             detection.setStatus("SUCCESS");
         }

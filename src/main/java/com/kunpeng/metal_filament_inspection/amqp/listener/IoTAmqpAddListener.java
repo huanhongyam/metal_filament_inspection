@@ -2,7 +2,7 @@ package com.kunpeng.metal_filament_inspection.amqp.listener;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kunpeng.metal_filament_inspection.domain.dto.DetectTaskDTO;
+import com.kunpeng.metal_filament_inspection.domain.dto.TaskDTO;
 import com.kunpeng.metal_filament_inspection.domain.dto.WireMaterialSaveDTO;
 import com.kunpeng.metal_filament_inspection.service.IWireMaterialService;
 import com.kunpeng.metal_filament_inspection.utils.IdWorker;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class IotAmqpListener {
+public class IotAmqpAddListener {
     private final ObjectMapper objectMapper;
     private final IWireMaterialService wireMaterialService;
     private final IdWorker idWorker;
@@ -23,7 +23,7 @@ public class IotAmqpListener {
     private RabbitTemplate rabbitTemplate;
 
 
-    public IotAmqpListener(ObjectMapper objectMapper, IWireMaterialService wireMaterialService,IdWorker idWorker) {
+    public IotAmqpAddListener(ObjectMapper objectMapper, IWireMaterialService wireMaterialService, IdWorker idWorker) {
         this.objectMapper = objectMapper;
         this.wireMaterialService = wireMaterialService;
         this.idWorker = idWorker;
@@ -59,7 +59,7 @@ public class IotAmqpListener {
                     log.info("未找到 properties.2，不触发检测任务");
                     return;
                 }
-                    DetectTaskDTO taskDTO = objectMapper.convertValue(dataNode2, DetectTaskDTO.class);
+                    TaskDTO taskDTO = objectMapper.convertValue(dataNode2, TaskDTO.class);
                     taskDTO.setBatchNumber(batchNumber);
                     String exchange = SystemConstants.RABBITMQ_EXCHANGE_DETECT_TASK;
                     rabbitTemplate.convertAndSend(exchange, "detect.task",taskDTO);
