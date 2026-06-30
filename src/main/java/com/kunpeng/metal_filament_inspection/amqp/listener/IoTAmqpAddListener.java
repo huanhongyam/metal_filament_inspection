@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class IotAmqpAddListener {
+public class IoTAmqpAddListener {
     private final ObjectMapper objectMapper;
     private final IWireMaterialService wireMaterialService;
     private final IdWorker idWorker;
@@ -23,7 +23,7 @@ public class IotAmqpAddListener {
     private RabbitTemplate rabbitTemplate;
 
 
-    public IotAmqpAddListener(ObjectMapper objectMapper, IWireMaterialService wireMaterialService, IdWorker idWorker) {
+    public IoTAmqpAddListener(ObjectMapper objectMapper, IWireMaterialService wireMaterialService, IdWorker idWorker) {
         this.objectMapper = objectMapper;
         this.wireMaterialService = wireMaterialService;
         this.idWorker = idWorker;

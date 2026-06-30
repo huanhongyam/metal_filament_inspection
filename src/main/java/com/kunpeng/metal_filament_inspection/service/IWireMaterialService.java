@@ -20,4 +20,10 @@ public interface IWireMaterialService extends IService<WireMaterial> {
     Result<Boolean> saveWireMaterial(WireMaterialSaveDTO wireMaterialSaveDTO);
 
     Result<Boolean> checkByBatchNoWithRollNo(Long batchNo, Long rollNo);
+
+    List<WireMaterialDTO> listUnevaluated(Integer hours, Integer limit);
+
+    Result<Boolean> updateEvaluation(Long batchNumber, @Valid WireMaterialUpdateDTO dto);
+
+    Result<Integer> updateEvaluationBatch(@Valid List<WireMaterialUpdateDTO> dtoList);
 }

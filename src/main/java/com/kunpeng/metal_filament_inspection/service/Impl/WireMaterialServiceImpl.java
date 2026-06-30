@@ -135,4 +135,90 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
                 .exists();
         return Result.success(exists);
     }
+    @Override
+    public List<WireMaterialDTO> listUnevaluated(Integer hours, Integer limit) {
+        if (hours == null || hours <= 0) {
+            hours = 24;
+        }
+        LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(WireMaterial::getModelEvaluationResult, WireMaterial.EvaluationResult.UNKNOWN)
+                .ge(WireMaterial::getCreateTime, LocalDateTime.now().minusHours(hours))
+                .orderByDesc(WireMaterial::getCreateTime);
+        if (limit != null && limit > 0) {
+            if (limit > 1000) limit = 1000;
+            wrapper.last("LIMIT " + limit);
+        }
+        List<WireMaterial> entities = list(wrapper);
+        return entities.stream()
+                .map(entity -> {
+                    WireMaterialDTO dto = new WireMaterialDTO();
+                    BeanUtils.copyProperties(entity, dto);
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+    @Override
+    public Result<Boolean> updateEvaluation(Long batchNumber, WireMaterialUpdateDTO dto) {
+        log.info("Agent 更新评估结果 — 批次号：{}，结论：{}，置信度：{}",
+                batchNumber, dto.getModelEvaluationResult(), dto.getModelConfidence());
+
+        UpdateWrapper<WireMaterial> updateWrapper = Wrappers.update();
+        updateWrapper.eq("batch_number", batchNumber);
+
+        WireMaterial entity = new WireMaterial();
+        entity.setEvaluationMessage(dto.getEvaluationMessage());
+        entity.setModelConfidence(dto.getModelConfidence());
+
+        // String → Enum 转换，容错处理
+        if (StringUtils.hasText(dto.getModelEvaluationResult())) {
+            try {
+                entity.setModelEvaluationResult(
+                        WireMaterial.EvaluationResult.valueOf(dto.getModelEvaluationResult()));
+            } catch (IllegalArgumentException e) {
+                log.warn("无效的评估结果值：{}，跳过更新", dto.getModelEvaluationResult());
+                return Result.error("modelEvaluationResult 取值必须为 PASS / FAIL / UNKNOWN");
+            }
+        }
+
+        boolean updated = update(entity, updateWrapper);
+        if (!updated) {
+            log.warn("更新评估结果失败，批次号 {} 不存在", batchNumber);
+            return Result.error("批次号不存在");
+        }
+        return Result.success(true);
+    }
+    @Override
+    public Result<Integer> updateEvaluationBatch(List<WireMaterialUpdateDTO> dtoList) {
+        if (dtoList == null || dtoList.isEmpty()) {
+            return Result.error("评估列表不能为空");
+        }
+        int successCount = 0;
+        for (WireMaterialUpdateDTO dto : dtoList) {
+            UpdateWrapper<WireMaterial> updateWrapper = Wrappers.update();
+            updateWrapper.eq("batch_number", dto.getBatchNumber());
+
+            WireMaterial entity = new WireMaterial();
+            entity.setEvaluationMessage(dto.getEvaluationMessage());
+            entity.setModelConfidence(dto.getModelConfidence());
+
+            if (StringUtils.hasText(dto.getModelEvaluationResult())) {
+                try {
+                    entity.setModelEvaluationResult(
+                            WireMaterial.EvaluationResult.valueOf(dto.getModelEvaluationResult()));
+                } catch (IllegalArgumentException e) {
+                    log.warn("批次 {} 评估结果值无效：{}，跳过", dto.getBatchNumber(), dto.getModelEvaluationResult());
+                    continue;
+                }
+            }
+
+            boolean updated = update(entity, updateWrapper);
+            if (updated) {
+                successCount++;
+            } else {
+                log.warn("批次 {} 不存在，跳过", dto.getBatchNumber());
+            }
+        }
+        log.info("Agent 批量评估完成：{}/{} 条成功", successCount, dtoList.size());
+        return Result.success(successCount);
+    }
 }

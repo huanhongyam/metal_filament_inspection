@@ -95,4 +95,38 @@ public class WireMaterialController {
             @RequestParam  Long batchNo,@RequestParam Long rollNo) {
         return wireMaterialService.checkByBatchNoWithRollNo(batchNo,rollNo);
     }
+    /**
+     * Agent 查询未评估线材
+     * 用于 Python 定时任务拉取最近 N 小时内 model_evaluation_result = UNKNOWN 的记录
+     * 权限：Agent 专用（pass4agent）
+     */
+    @Operation(summary = "Agent查询未评估线材")
+    @GetMapping("/unevaluated")
+    public Result<List<WireMaterialDTO>> getUnevaluatedWireMaterials(
+            @RequestParam(value = "hours", defaultValue = "24") Integer hours,
+            @RequestParam(value = "limit", defaultValue = "50") Integer limit) {
+        log.info("Agent 查询未评估线材，回溯{}小时，最多{}条", hours, limit);
+        return Result.success(wireMaterialService.listUnevaluated(hours, limit));
+    }
+    /**
+     * Agent 更新线材评估结果
+     * 不走 @RequireAdmin，使用 pass4agent 头鉴权
+     * 权限：Agent 专用
+     */
+   @Operation(summary = "Agent更新评估结果")
+   @PutMapping("/{batchNumber}/evaluation")
+   public Result<Boolean> updateEvaluation(
+           @PathVariable Long batchNumber,
+   @Valid @RequestBody WireMaterialUpdateDTO dto) {
+       log.info("Agent 回写评估结果 — 批次号：{}", batchNumber);
+       return wireMaterialService.updateEvaluation(batchNumber, dto);
+   }
+    @Operation(summary = "Agent批量更新评估结果")
+    @PutMapping("/evaluation-batch")
+    public Result<Integer> updateEvaluationBatch(
+            @Valid @RequestBody List<WireMaterialUpdateDTO> dtoList) {
+        log.info("Agent 批量回写评估结果，共 {} 条", dtoList.size());
+        return wireMaterialService.updateEvaluationBatch(dtoList);
+    }
+
 }
