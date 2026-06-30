@@ -1,25 +1,16 @@
 package com.kunpeng.metal_filament_inspection.domain.dto;
 
-import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
-import lombok.AllArgsConstructor;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * 线材分页响应DTO
- */
-@Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class WireMaterialDTO {
-    /**
-     * ID
-     */
-    private Long batchNumber;
+@Data
+public class WireMaterialSaveDTO {
     /**
      * 设备ID
      */
@@ -46,11 +37,6 @@ public class WireMaterialDTO {
     private BigDecimal weight;
 
     /**
-     * 原始生产信息（十六进制GBK编码）
-     */
-    private String sourceOriginRaw;
-
-    /**
      * 生产商
      */
     private String manufacturer;
@@ -63,17 +49,8 @@ public class WireMaterialDTO {
     /**
      * 工艺类型
      */
+    @TableField("process_type")
     private String processType;
-
-    /**
-     * 生产机器
-     */
-    private String productionMachine;
-
-    /**
-     * 联系方式（邮箱）
-     */
-    private String contactEmail;
 
     /**
      * 应用场景编号
@@ -81,30 +58,25 @@ public class WireMaterialDTO {
     private String scenarioCode;
 
     /**
-     * 创建时间
+     * 批次号（主键）
      */
-    private LocalDateTime createTime;
+    @TableId
+    private Long batchNumber;
 
-    /**
-     * Agent评估详情
-     */
-    private String evaluationMessage;
-
-    /**
-     * Agent评估结果
-     */
-    private WireMaterial.EvaluationResult modelEvaluationResult;
-    /**
-     * Agent评估置信度
-     */
-    private BigDecimal modelConfidence;
     /**
      * 批次
      */
     private Long batchNo;
+
     /**
      * 卷序
      */
     private Long rollNo;
 
-} 
+    /**
+     * 创建时间 （查询内为查询时间到前一周内）
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Builder.Default
+    private LocalDateTime createTime = LocalDateTime.now();
+}

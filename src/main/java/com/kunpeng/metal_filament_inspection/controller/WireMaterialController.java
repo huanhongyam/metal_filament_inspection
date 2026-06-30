@@ -2,23 +2,18 @@ package com.kunpeng.metal_filament_inspection.controller;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
-import com.kunpeng.metal_filament_inspection.domain.dto.PageDTO;
-import com.kunpeng.metal_filament_inspection.domain.dto.Result;
-import com.kunpeng.metal_filament_inspection.domain.dto.WireMaterialDTO;
+import com.kunpeng.metal_filament_inspection.domain.dto.*;
 import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
 import com.kunpeng.metal_filament_inspection.service.IWireMaterialService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
 @Tag(name = "线材管理控制器")
 @Slf4j
 @RestController
@@ -27,6 +22,17 @@ public class WireMaterialController {
     @Autowired
     private IWireMaterialService wireMaterialService;
 
+    /**
+     * 条件查询线材列表
+     * 权限：已认证用户
+     */
+    @Operation(summary = "条件查询线材列表")
+    @PostMapping("/list-agent")
+    public Result<List<WireMaterialDTO>> getWireMaterialListQuery(@RequestParam(value = "limit", defaultValue = "10" ,required = false) Integer limit,
+                                                                  @RequestBody(required = false) WireMaterialQueryDTO wireMaterialDTO
+    ) {
+        return Result.success(wireMaterialService.listQueryPage(limit,wireMaterialDTO));
+    }
     /**
      * 分页查询线材列表
      * 权限：已认证用户
@@ -70,5 +76,23 @@ public class WireMaterialController {
     public Result<Boolean> deleteWireMaterial(@PathVariable Long batchNumber) {
         return wireMaterialService.deleteById(batchNumber);
     }
-
+    /**
+     * 增加线材记录
+     * 权限：无需认证（公开接口）
+     */
+    @Operation(summary = "创建设备")
+    @PostMapping
+    public Result<Boolean> createDevice(@RequestBody WireMaterialSaveDTO wireMaterialSaveDTO) {
+        return wireMaterialService.saveWireMaterial(wireMaterialSaveDTO);
+    }
+    /**
+     * 根据批次卷序查询线材是否存在
+     * 权限：无需认证（公开接口）
+     */
+    @Operation(summary = "根据批次卷序查询线材是否存在")
+    @GetMapping("/check")
+    public Result<Boolean> checkWireMaterialByBatchNoWithRollNo(
+            @RequestParam  Long batchNo,@RequestParam Long rollNo) {
+        return wireMaterialService.checkByBatchNoWithRollNo(batchNo,rollNo);
+    }
 }

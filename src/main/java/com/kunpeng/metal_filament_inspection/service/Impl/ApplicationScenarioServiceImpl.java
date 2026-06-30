@@ -1,56 +1,53 @@
 package com.kunpeng.metal_filament_inspection.service.Impl;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.github.pagehelper.Page;
-import com.github.pagehelper.PageHelper;
-import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
 import com.kunpeng.metal_filament_inspection.domain.dto.ApplicationScenarioDTO;
 import com.kunpeng.metal_filament_inspection.domain.dto.PageDTO;
 import com.kunpeng.metal_filament_inspection.domain.entity.ApplicationScenario;
 import com.kunpeng.metal_filament_inspection.mapper.ApplicationScenarioMapper;
 import com.kunpeng.metal_filament_inspection.service.IApplicationScenarioService;
-import com.kunpeng.metal_filament_inspection.service.IUserService;
 import com.kunpeng.metal_filament_inspection.utils.SystemConstants;
 import com.kunpeng.metal_filament_inspection.utils.UserHolder;
-import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Transactional
 @Service
 public class ApplicationScenarioServiceImpl extends ServiceImpl<ApplicationScenarioMapper, ApplicationScenario> implements IApplicationScenarioService {
-    @Resource
-    private ApplicationScenarioMapper applicationScenarioMapper;
-    @Resource
-    private IUserService userService;
 
     @Override
-    public PageDTO getScenarioList(Integer current, String wireType, String scenarioName) {
-        PageHelper.startPage(current, SystemConstants.DEFAULT_PAGE_SIZE);
-        QueryWrapper<ApplicationScenario> queryWrapper = new QueryWrapper<>();
+    public PageDTO<ApplicationScenarioDTO> getScenarioList(Integer current, String wireType, String scenarioName) {
+        Page<ApplicationScenario> page = new Page<>(current, SystemConstants.DEFAULT_PAGE_SIZE);
+        // 构建动态查询条件
+        LambdaQueryWrapper<ApplicationScenario> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(wireType)) {
-            queryWrapper.eq("wire_type", wireType);
+            wrapper.eq(ApplicationScenario::getWireType, wireType);
         }
         if (StringUtils.hasText(scenarioName)) {
-            queryWrapper.like("scenario_name", scenarioName);
+            wrapper.like(ApplicationScenario::getScenarioName, scenarioName);
         }
-        List<ApplicationScenario> list = applicationScenarioMapper.selectList(queryWrapper);
-        Page<ApplicationScenario> page = (Page<ApplicationScenario>) list;
-        long total = page.getTotal();
-        List<ApplicationScenarioDTO> records = list.stream()
+        // 按创建时间倒序等
+        wrapper.orderByDesc(ApplicationScenario::getCreateTime);
+        // 分页查询
+        IPage<ApplicationScenario> pageResult = page(page, wrapper);
+        // 转换数据
+        List<ApplicationScenarioDTO> dtoList = pageResult.getRecords().stream()
                 .map(item -> BeanUtil.copyProperties(item, ApplicationScenarioDTO.class))
-                .toList();
-        PageDTO pageDTO = new PageDTO<>();
-        pageDTO.setRecords(records);
-        pageDTO.setPageSize(SystemConstants.DEFAULT_PAGE_SIZE);
-        pageDTO.setTotal(total);
-        pageDTO.setCurrentPage(current);
+                .collect(Collectors.toList());
+        PageDTO<ApplicationScenarioDTO> pageDTO = new PageDTO<>();
+        pageDTO.setCurrentPage((int) pageResult.getCurrent());
+        pageDTO.setPageSize((int) pageResult.getSize());
+        pageDTO.setTotal(pageResult.getTotal());
+        pageDTO.setRecords(dtoList);
         return pageDTO;
     }
     @Override

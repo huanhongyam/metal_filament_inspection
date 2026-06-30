@@ -19,6 +19,15 @@ spring:
           max-idle: 10
           min-idle: 1
           time-between-eviction-runs: 10s
+  rabbitmq:
+    host: 10.168.89.206 # 你的虚拟机IP
+    port: 5672 # 端口
+    virtual-host: /wirematerial # 虚拟主机
+    username: kunpeng # 用户名
+    password: 123321 # 密码
+    listener:
+      simple:
+        prefetch: 1
 mybatis-plus:
   type-aliases-package: com.kunpeng.metal_filament_inspection.domain # 别名扫描包
 logging:
@@ -37,3 +46,36 @@ springdoc:
     path: /swagger-ui.html
     enabled: true
   packages-to-scan: com.kunpeng.metal_filament_inspection.controller
+huawei:
+  iot:
+    amqp:
+      host: amqps://f09fb0e0e6.st1.iotda-app.cn-east-3.myhuaweicloud.com  # 接入地址
+      port: 5671
+      access-key: "fjbhveXV"
+      access-code: "xRkCW3g6ZUJ4zDiL8CeAfnSislpvy86M"
+      queue-name: "DefaultQueue"
+      client-id: "backend-${random.uuid}" # 客户端唯一标识
+      auto-acknowledge: true
+    app:
+      ak: "HPUA69LJ2GT1NKLAEMS9"
+      sk: "QAocumBao0UyRrKtRCYdxXZ1O4ToPZi5QseDeXH0"
+      endpoint: "f09fb0e0e6.st1.iotda-app.cn-east-3.myhuaweicloud.com"
+      projectId: "019e966a305f765cb9bd8e6b650effc1"
+yolo:
+  model-path: src/main/resources/models/best.onnx
+  confidence-threshold: 0.5
+  nms-threshold: 0.4
+  input-width: 640
+  input-height: 640
+  image-dir: "src/main/resources/textPicture"
+# 七牛云存储配置
+qiniu:
+  access-key: "VbN_icwnxdmV1ZADAAi3fH_SQUn8Czyv5_TpbDH1"
+  secret-key: "-FRoyL9QtL5_j7Q_naMylGSVCSNtb6iMA3JNKBmF"
+  bucket: "metalfilamentinspection"
+  domain: "th8lfohjy.hn-bkt.clouddn.com"
+  region: "guangdong"
+  expire-seconds: 3600
+  use-https: false
+opencv:
+  library-path: "D:/opencv/build/java/x64/opencv_java4120.dll"

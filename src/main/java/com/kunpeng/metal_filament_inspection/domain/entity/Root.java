@@ -1,5 +1,6 @@
 package com.kunpeng.metal_filament_inspection.domain.entity;
 
+import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,7 +13,7 @@ import org.springframework.data.annotation.Id;
 @NoArgsConstructor
 public class Root {
     
-    @Id
+    @TableId
     private Long id;
     
     /**
