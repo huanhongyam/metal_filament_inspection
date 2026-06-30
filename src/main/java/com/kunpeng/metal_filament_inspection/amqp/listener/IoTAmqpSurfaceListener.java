@@ -11,12 +11,12 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class IotAmqpSurfaceListener {
+public class IoTAmqpSurfaceListener {
 
     private final ObjectMapper objectMapper;
     private final RabbitTemplate rabbitTemplate;
 
-    public IotAmqpSurfaceListener(ObjectMapper objectMapper, RabbitTemplate rabbitTemplate) {
+    public IoTAmqpSurfaceListener(ObjectMapper objectMapper, RabbitTemplate rabbitTemplate) {
         this.objectMapper = objectMapper;
         this.rabbitTemplate = rabbitTemplate;
     }

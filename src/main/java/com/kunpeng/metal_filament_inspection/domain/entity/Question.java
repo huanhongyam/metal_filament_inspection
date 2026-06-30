@@ -1,5 +1,9 @@
 package com.kunpeng.metal_filament_inspection.domain.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,8 +20,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Question {
-    
 
+    @TableId(type = IdType.INPUT)
     private Long id;
     
     /**
@@ -56,4 +60,6 @@ public class Question {
      * 响应时间
      */
     private LocalDateTime responseTime;
+
+    private Long userId;
 } 

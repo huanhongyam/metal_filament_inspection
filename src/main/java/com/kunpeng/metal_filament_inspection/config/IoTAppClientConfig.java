@@ -13,7 +13,7 @@ import org.springframework.util.StringUtils;
 
 @Slf4j
 @Configuration
-public class IotAppClientConfig {
+public class IoTAppClientConfig {
 
     @Value("${huawei.iot.app.ak}")
     private String ak;

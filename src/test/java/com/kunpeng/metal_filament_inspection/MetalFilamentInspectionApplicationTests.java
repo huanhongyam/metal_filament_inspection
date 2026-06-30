@@ -3,9 +3,10 @@ package com.kunpeng.metal_filament_inspection;
 import cn.hutool.crypto.digest.BCrypt;
 import com.kunpeng.metal_filament_inspection.controller.TestController;
 import com.kunpeng.metal_filament_inspection.domain.dto.LoginFormDTO;
-import com.kunpeng.metal_filament_inspection.domain.dto.PageDTO;
-import com.kunpeng.metal_filament_inspection.domain.dto.WireMaterialDTO;
-import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
+import com.kunpeng.metal_filament_inspection.domain.dto.QuestionAskDTO;
+import com.kunpeng.metal_filament_inspection.domain.dto.Result;
+import com.kunpeng.metal_filament_inspection.domain.vo.QuestionVO;
+import com.kunpeng.metal_filament_inspection.service.IQuestionService;
 import com.kunpeng.metal_filament_inspection.service.IUserService;
 import com.kunpeng.metal_filament_inspection.service.IWireMaterialService;
 import com.kunpeng.metal_filament_inspection.utils.IdWorker;
@@ -22,8 +23,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import java.util.List;
-
 @Slf4j
 @SpringBootTest
 class MetalFilamentInspectionApplicationTests {
@@ -39,6 +38,8 @@ class MetalFilamentInspectionApplicationTests {
     private IWireMaterialService wireMaterialService;
     @Autowired
     private QiniuUploadUtil qiniuUploadUtil;
+    @Autowired
+    private IQuestionService questionService;
     @Test
     void contextLoads() {
         log.info("{}",testController.test());
@@ -99,7 +100,7 @@ class MetalFilamentInspectionApplicationTests {
         // 3. 提取文件名
         String fileName = Paths.get(absolutePath).getFileName().toString();
 
-        // 4. 核心：将本地文件包装成 MultipartFile（Mock实现）
+        // 4. 核心：将本地文件包装成 MultipartFile
         // 参数说明：参数1-表单字段名(随意)，参数2-原始文件名，参数3-MIME类型，参数4-字节数组
         MultipartFile multipartFile = new MockMultipartFile(
                 "file",
@@ -108,10 +109,17 @@ class MetalFilamentInspectionApplicationTests {
                 fileBytes
         );
 
-        // 5. 🚀 调用您的工具类方法（与您写的代码完全一致）
+        // 5. 调用工具类方法
         String cloudUrl = qiniuUploadUtil.uploadImage(multipartFile);
 
         // 6. 打印结果并断言
         System.out.println("✅ 上传成功，访问地址: " + cloudUrl);
+    }
+    @Test
+    public void testAgentQuestion(){
+        QuestionAskDTO questionAskDTO = new QuestionAskDTO();
+        questionAskDTO.setQuestionContent("11,请回答纯文本内容不影响gbk显示，无图标回答");
+        Result<QuestionVO> questionVOResult = questionService.askFromUser(23L, questionAskDTO);
+        log.info(questionVOResult.getData().getAiResponseContent());
     }
 }
