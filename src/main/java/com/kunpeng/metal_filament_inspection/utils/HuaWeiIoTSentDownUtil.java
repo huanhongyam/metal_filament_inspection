@@ -24,41 +24,44 @@ public class HuaWeiIoTSentDownUtil {
     private ObjectMapper objectMapper;
 
     /**
-     * 下发消息（使用系统标准格式）
-     * 平台会封装成标准JSON：{"object_device_id":"...", "name":"...", "id":"...", "content":"..."}*
+     * 下发消息（topic = name 字段，设备端按 name 订阅区分消息类型）
      * @param deviceId 设备ID
-     * @param payload  消息内容（将自动转为JSON字符串放入content字段）
+     * @param topic    消息主题（对应华为 IoT 标准格式的 name 字段）
+     * @param payload  消息内容（对象，自动序列化为 JSON 字符串）
      */
-    public void sendDownMessage(String deviceId, Object payload) {
+    public void sendDownMessage(String deviceId, String topic, Object payload) {
         try {
-            // 1. 构造符合格式的消息体[reference:4]
             Map<String, Object> standardMsg = new LinkedHashMap<>();
-            standardMsg.put("name", "Surface_data");
+            standardMsg.put("name", topic);
             standardMsg.put("id", UUID.randomUUID().toString());
-            // content字段必须是字符串，如果是对象则转为JSON
-            String content = objectMapper.writeValueAsString(payload);
-            standardMsg.put("content", content);
-            // 2. 创建请求
+            standardMsg.put("content", objectMapper.writeValueAsString(payload));
+
             DeviceMessageRequest body = new DeviceMessageRequest()
-                    .withMessage(standardMsg)          // 消息内容
+                    .withMessage(standardMsg)
                     .withPayloadFormat("standard");
 
             CreateMessageRequest request = new CreateMessageRequest()
                     .withDeviceId(deviceId)
                     .withBody(body);
 
-            // 3. 执行下发
             CreateMessageResponse response = iotClient.createMessage(request);
-            log.info("【系统格式】消息下发成功，设备: {}, 消息ID: {}", deviceId, response.getMessageId());
+            log.info("消息下发成功 — deviceId: {}, topic: {}, msgId: {}",
+                    deviceId, topic, response.getMessageId());
 
         } catch (ClientRequestException e) {
-            log.error("【系统格式】消息下发失败，设备: {}, 错误码: {}, 错误信息: {}",
-                    deviceId, e.getErrorCode(), e.getErrorMsg());
+            log.error("消息下发失败 — deviceId: {}, topic: {}, 错误码: {}, 错误信息: {}",
+                    deviceId, topic, e.getErrorCode(), e.getErrorMsg());
             throw new RuntimeException("消息下发失败: " + e.getErrorMsg(), e);
         } catch (Exception e) {
-            log.error("【系统格式】消息下发异常，设备: {}", deviceId, e);
+            log.error("消息下发异常 — deviceId: {}, topic: {}", deviceId, topic, e);
             throw new RuntimeException("消息下发异常: " + e.getMessage(), e);
         }
+    }
+    /**
+     * 下发消息（使用默认 topic = SystemConstants.DEFAULT_DOWNLINK_TOPIC）
+     */
+    public void sendDownMessage(String deviceId, Object payload) {
+        sendDownMessage(deviceId, SystemConstants.DEFAULT_SENDDOWN_TOPIC, payload);
     }
 
 }

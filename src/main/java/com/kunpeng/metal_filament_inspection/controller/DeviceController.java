@@ -10,6 +10,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
 @Tag(name = "设备接口")
 @Slf4j
 @RestController
@@ -26,6 +29,15 @@ public class DeviceController {
     @GetMapping("/list")
     public Result<PageDTO> getDeviceList(@RequestParam(value = "current", defaultValue = "1") Integer current) {
         return Result.success(deviceService.listPage(current));
+    }
+    /**
+     * 查询设备启动数
+     * 权限：已认证用户
+     */
+    @Operation(summary = "查询设备启动数")
+    @GetMapping("/start")
+    public Result<Map<Long,Long>> getDeviceStart() {
+        return Result.success(deviceService.listStart());
     }
     /**
      * 根据ID删除设备

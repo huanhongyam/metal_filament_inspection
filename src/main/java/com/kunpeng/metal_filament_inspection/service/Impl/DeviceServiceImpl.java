@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -81,5 +82,12 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
             return Result.error("用户不存在");
         }
         return Result.success(removeById(deviceId));
+    }
+
+    @Override
+    public Map<Long, Long> listStart() {
+        Long totalCount = query().count();
+        Long onCount = query().eq("status", "ON").count();
+        return Map.of(totalCount,onCount);
     }
 }

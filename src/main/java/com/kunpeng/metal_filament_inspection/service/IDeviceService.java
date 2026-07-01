@@ -7,6 +7,7 @@ import com.kunpeng.metal_filament_inspection.domain.dto.Result;
 import com.kunpeng.metal_filament_inspection.domain.entity.Device;
 
 import java.util.List;
+import java.util.Map;
 
 public interface IDeviceService extends IService<Device> {
 
@@ -15,4 +16,6 @@ public interface IDeviceService extends IService<Device> {
     Result<Boolean> saveDevice(Device device);
 
     Result<Boolean> removeDeviceById(Long deviceId);
+
+    Map<Long, Long> listStart();
 }

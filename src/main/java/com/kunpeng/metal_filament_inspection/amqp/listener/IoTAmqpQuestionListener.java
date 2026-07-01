@@ -2,7 +2,10 @@ package com.kunpeng.metal_filament_inspection.amqp.listener;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kunpeng.metal_filament_inspection.domain.dto.Result;
+import com.kunpeng.metal_filament_inspection.domain.vo.QuestionVO;
 import com.kunpeng.metal_filament_inspection.service.IQuestionService;
+import com.kunpeng.metal_filament_inspection.utils.HuaWeiIoTSentDownUtil;
 import com.kunpeng.metal_filament_inspection.utils.SystemConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jms.annotation.JmsListener;
@@ -14,10 +17,12 @@ public class IoTAmqpQuestionListener {
 
     private final ObjectMapper objectMapper;
     private final IQuestionService questionService;
+    private final HuaWeiIoTSentDownUtil huaWeiIoTSentDownUtil;
 
-    public IoTAmqpQuestionListener(ObjectMapper objectMapper, IQuestionService questionService) {
+    public IoTAmqpQuestionListener(ObjectMapper objectMapper, IQuestionService questionService, HuaWeiIoTSentDownUtil huaWeiIoTSentDownUtil) {
         this.objectMapper = objectMapper;
         this.questionService = questionService;
+        this.huaWeiIoTSentDownUtil = huaWeiIoTSentDownUtil;
     }
 
     @JmsListener(
@@ -47,7 +52,9 @@ public class IoTAmqpQuestionListener {
             }
 
             log.info("收到设备 {} 的提问: {}", deviceId, questionContent);
-            questionService.askFromDevice(deviceId, questionContent);
+            Result<QuestionVO> questionVOResult = questionService.askFromDevice(deviceId, questionContent);
+            String aiResponseContent = questionVOResult.getData().getAiResponseContent();
+            huaWeiIoTSentDownUtil.sendDownMessage(SystemConstants.HUAWEI_DEVICE_ID,SystemConstants.HUAWEI_SENDDOWN_QUESTION_TOPIC,aiResponseContent);
 
         } catch (Exception e) {
             log.error("硬件问题消息解析失败", e);

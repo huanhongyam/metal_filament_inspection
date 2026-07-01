@@ -31,8 +31,10 @@ public class IoTSendDownConsumer {
     ))
     public void sendDownMessage4IoT(TaskDTO task){
         Long batchNumber = task.getBatchNumber();
+        // 查询相应检测记录并调用聚合逻辑聚合消息下发华为云
         List<DetectionBatchDTO> detectionBatchDTOS = detectionBatchService.listFlawData(batchNumber);
         List<DetectionBatchSummaryDTO> detectionBatchSummaryDTOS = DetectionSummary.summarizeByBatchLoop(detectionBatchDTOS);
-        huaWeiIoTSentDownUtil.sendDownMessage(SystemConstants.HUAWEI_DEVICE_ID,detectionBatchSummaryDTOS);
+        // 下发消息
+        huaWeiIoTSentDownUtil.sendDownMessage(SystemConstants.HUAWEI_DEVICE_ID,SystemConstants.HUAWEI_SENDDOWN_SURFACE_DATA_TOPIC,detectionBatchSummaryDTOS);
     }
 }
