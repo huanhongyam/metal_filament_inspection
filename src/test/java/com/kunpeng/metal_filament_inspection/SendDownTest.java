@@ -23,6 +23,6 @@ public class SendDownTest {
     @Test
     public void testHuaWei(){
         huaWeiIoTSentDownUtil.sendDownMessage(SystemConstants.HUAWEI_DEVICE_ID,"batr");
-
     }
+
 }

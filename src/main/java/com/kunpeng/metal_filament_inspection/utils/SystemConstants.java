@@ -14,6 +14,8 @@ public class SystemConstants {
     public static final String RABBITMQ_EXCHANGE_SENDDOWN_TASK = "senddown.task";
     public static final String DEFAULT_QINIU_URL = "https://portal.qiniu.com/kodo/bucket/resource-v2?bucketName=metalfilamentinspection";
     public static final String HUAWEI_SENDDOWN_SURFACE_DATA_TOPIC = "Surface_data.task";
+    public static final String HUAWEI_SENDDOWN_QUESTION_TOPIC = "question.task";
+    public static final String DEFAULT_SENDDOWN_TOPIC = "default.task";
     public static final String HUAWEI_DEVICE_ID = "6a32861318855b39c5258e08_test";
     public static final String QUESTION_PREFIX = "question";
     public static final String AGENT4J_URL = "http://localhost:8081";

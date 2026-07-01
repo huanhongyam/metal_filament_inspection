@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
 import com.kunpeng.metal_filament_inspection.domain.dto.*;
 import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
+import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialPassRateVO;
 import com.kunpeng.metal_filament_inspection.service.IWireMaterialService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -12,7 +13,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Tag(name = "线材管理控制器")
 @Slf4j
@@ -41,6 +45,24 @@ public class WireMaterialController {
     @GetMapping("/list")
     public Result<PageDTO> getWireMaterialList(@RequestParam(value = "current", defaultValue = "1") Integer current) {
         return Result.success(wireMaterialService.listPage(current));
+    }
+    /**
+     * 查询线材条数
+     * 权限：已认证用户
+     */
+    @Operation(summary = "查询线材条数")
+    @GetMapping("/count")
+    public Result<Long> getWireMaterialCount() {
+        return Result.success(wireMaterialService.count());
+    }
+    /**
+     * 查询线材合格率,合格数量，不合格数量
+     * 权限：已认证用户
+     */
+    @Operation(summary = "查询线材合格率,合格数量，不合格数量")
+    @GetMapping("/pass-param")
+    public Result<WireMaterialPassRateVO> getWireMaterialPassParam(@RequestParam String yearMonth) {
+        return Result.success(wireMaterialService.getPassRateByYearMonth(yearMonth));
     }
     /**
      * 根据批次号查询线材信息

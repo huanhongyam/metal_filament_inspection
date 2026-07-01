@@ -73,6 +73,16 @@ public class ApplicationScenarioController {
         return Result.success(applicationScenarioService.createScenario(applicationScenarioDTO));
     }
     /**
+     * 查询应用场景总数
+     * 权限：已认证用户
+     */
+    @Operation(summary = "查询应用场景总数")
+    @GetMapping
+    public Result<Long> countScenario() {
+        return Result.success(applicationScenarioService.count());
+    }
+
+    /**
      * 更新应用场景
      * 权限：仅管理员用户（roleId=1）
      */

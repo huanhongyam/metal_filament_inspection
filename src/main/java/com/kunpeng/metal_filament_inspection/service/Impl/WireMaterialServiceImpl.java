@@ -1,6 +1,7 @@
 package com.kunpeng.metal_filament_inspection.service.Impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.stream.CollectorUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -9,6 +10,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.kunpeng.metal_filament_inspection.domain.dto.*;import com.kunpeng.metal_filament_inspection.domain.entity.User;
 import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
+import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialPassRateVO;
+import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialVO;
 import com.kunpeng.metal_filament_inspection.mapper.WireMaterialMapper;
 import com.kunpeng.metal_filament_inspection.service.IUserService;
 import com.kunpeng.metal_filament_inspection.service.IWireMaterialService;
@@ -20,8 +23,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -30,6 +39,8 @@ import java.util.stream.Collectors;
 public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, WireMaterial> implements IWireMaterialService {
     @Autowired
     private IUserService userService;
+    @Autowired
+    private WireMaterialMapper wireMaterialMapper;
     @Override
     public List<WireMaterialDTO> listQueryPage(Integer limit, WireMaterialQueryDTO queryDTO) {
         LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
@@ -97,15 +108,15 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         return Result.success(removeById(batchNumber));
     }
     @Override
-    public PageDTO<WireMaterialQueryDTO> listPage(Integer current) {
+    public PageDTO<WireMaterialVO> listPage(Integer current) {
         Page<WireMaterial> page = new Page<>(current, SystemConstants.DEFAULT_PAGE_SIZE);
         // 执行分页查询
         IPage<WireMaterial> pageResult = page(page, null);
         // 转换当前页数据为 DTO
-        List<WireMaterialQueryDTO> dtoList = pageResult.getRecords().stream()
-                .map(item -> BeanUtil.copyProperties(item, WireMaterialQueryDTO.class))
+        List<WireMaterialVO> dtoList = pageResult.getRecords().stream()
+                .map(item -> BeanUtil.copyProperties(item, WireMaterialVO.class))
                 .collect(Collectors.toList());
-        PageDTO<WireMaterialQueryDTO> pageDTO = new PageDTO<>();
+        PageDTO<WireMaterialVO> pageDTO = new PageDTO<>();
         pageDTO.setCurrentPage((int) pageResult.getCurrent());
         pageDTO.setPageSize((int) pageResult.getSize());
         pageDTO.setTotal(pageResult.getTotal());
@@ -220,5 +231,37 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         }
         log.info("Agent 批量评估完成：{}/{} 条成功", successCount, dtoList.size());
         return Result.success(successCount);
+    }
+
+    @Override
+    public WireMaterialPassRateVO getPassRateByYearMonth(String yearMonth) {
+        // 1. 解析年月，构造时间范围,格式为 yyyy-MM
+        YearMonth ym = YearMonth.parse(yearMonth);
+        LocalDateTime start = ym.atDay(1).atStartOfDay();
+        LocalDateTime end = ym.atEndOfMonth().atTime(23, 59, 59);
+        // 2. 构建查询条件
+        LambdaQueryWrapper<WireMaterial> baseWrapper = new LambdaQueryWrapper<>();
+        baseWrapper.between(WireMaterial::getCreateTime, start, end);
+        // 3. 查询该月总记录数
+        Long totalCount = wireMaterialMapper.selectCount(baseWrapper);
+        // 4. 查询该月 PASS 记录数
+        baseWrapper.eq(WireMaterial::getModelEvaluationResult, "PASS");
+        Long passCount = wireMaterialMapper.selectCount(baseWrapper);
+        // 5. 计算不合格数
+        Long failCount = (totalCount != null ? totalCount : 0L)
+                - (passCount != null ? passCount : 0L);
+        // 6. 计算合格率（百分比，保留两位小数）
+        BigDecimal passRate = BigDecimal.ZERO;
+        if (totalCount != null && totalCount > 0) {
+            passRate = BigDecimal.valueOf(passCount == null ? 0 : passCount)
+                    .multiply(BigDecimal.valueOf(100))          // 转为百分比
+                    .divide(BigDecimal.valueOf(totalCount), 2, RoundingMode.HALF_UP);
+        }
+        // 7. 封装 DTO
+        WireMaterialPassRateVO dto = new WireMaterialPassRateVO();
+        dto.setPassRate(passRate);
+        dto.setPassCount(passCount == null ? 0L : passCount);
+        dto.setFailCount(failCount);
+        return dto;
     }
 }
