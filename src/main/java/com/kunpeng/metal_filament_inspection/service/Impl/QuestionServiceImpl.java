@@ -20,10 +20,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -39,6 +45,9 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private Executor streamExecutor;
 
     // 用户发起提问
     @Override
@@ -184,5 +193,82 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
             log.error("调用 Agent4j 失败", e);
             return "[AI 服务不可用: " + e.getMessage() + "]";
         }
+    }
+
+    @Override
+    public SseEmitter askStream(Long userId, QuestionAskDTO dto) {
+        // 1. 创建数据库记录
+        Question question = createQuestionRecord(dto.getDeviceId(), dto.getQuestionContent(), userId);
+
+        // 2. 创建 SseEmitter（5 分钟超时）
+        SseEmitter emitter = new SseEmitter(300_000L);
+
+        // 3. 异步执行流式调用
+        CompletableFuture.runAsync(() -> {
+            StringBuilder fullResponse = new StringBuilder();
+            try {
+                String url = SystemConstants.AGENT4J_URL + "/api/v1/chat/stream";
+
+                Map<String, Object> body = Map.of(
+                        "message", dto.getQuestionContent(),
+                        "stream", true
+                );
+
+                restTemplate.execute(url, HttpMethod.POST,
+                        request -> {
+                            request.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+                            request.getBody().write(objectMapper.writeValueAsBytes(body));
+                        },
+                        (org.springframework.web.client.ResponseExtractor<Void>) response -> {
+                            try (BufferedReader reader = new BufferedReader(
+                                    new InputStreamReader(response.getBody(), StandardCharsets.UTF_8))) {
+                                String line;
+                                while ((line = reader.readLine()) != null) {
+                                    if (line.startsWith("data: ")) {
+                                        String jsonStr = line.substring(6);
+                                        JsonNode node = objectMapper.readTree(jsonStr);
+
+                                        if (node.path("done").asBoolean(false)) {
+                                            break;
+                                        }
+
+                                        String content = node.path("content").asText("");
+                                        if (!content.isEmpty()) {
+                                            fullResponse.append(content);
+                                            emitter.send(SseEmitter.event()
+                                                    .name("message")
+                                                    .data(Map.of("content", content)));
+                                        }
+                                    }
+                                }
+                            }
+                            return null;
+                        }
+                );
+
+                // 4. 发送完成事件
+                emitter.send(SseEmitter.event()
+                        .name("done")
+                        .data(Map.of("content", "", "done", true)));
+                emitter.complete();
+
+                // 5. 回写数据库
+                updateQuestionResponse(question.getId(), fullResponse.toString());
+
+            } catch (Exception e) {
+                log.error("流式问答失败", e);
+                try {
+                    emitter.send(SseEmitter.event()
+                            .name("error")
+                            .data(Map.of("error", e.getMessage())));
+                } catch (Exception ex) {
+                    log.error("发送错误事件失败", ex);
+                }
+                emitter.completeWithError(e);
+                updateQuestionResponse(question.getId(), "[AI 服务不可用: " + e.getMessage() + "]");
+            }
+        }, streamExecutor);
+
+        return emitter;
     }
 }

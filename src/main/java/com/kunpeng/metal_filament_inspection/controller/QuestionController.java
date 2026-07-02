@@ -10,7 +10,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 
@@ -29,6 +31,14 @@ public class QuestionController {
         Long userId = UserHolder.getUserId();
         log.info("用户 {} 发起提问 — deviceId: {}", userId, dto.getDeviceId());
         return questionService.askFromUser(userId, dto);
+    }
+
+    @Operation(summary = "流式 AI 提问（SSE）")
+    @PostMapping(value = "/ask/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter askStream(@Valid @RequestBody QuestionAskDTO dto) {
+        Long userId = UserHolder.getUserId();
+        log.info("用户 {} 发起流式提问 — deviceId: {}", userId, dto.getDeviceId());
+        return questionService.askStream(userId, dto);
     }
 
     @Operation(summary = "分页查询问题记录")
