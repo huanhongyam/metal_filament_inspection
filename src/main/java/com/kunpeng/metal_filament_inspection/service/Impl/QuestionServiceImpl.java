@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -106,7 +107,6 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
                 .collect(Collectors.toList());
     }
 
-    // 私有方法
     /**
      * 创建 Question 数据库记录，返回带 ID 的实体
      */
@@ -136,6 +136,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         updateById(update);
         log.info("问题 {} 的 AI 响应已回写", questionId);
     }
+
     private String callAgent4j(String questionContent) {
         String url = SystemConstants.AGENT4J_URL + "/api/v1/chat";
 
@@ -184,6 +185,4 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
             return "[AI 服务不可用: " + e.getMessage() + "]";
         }
     }
-
 }
-

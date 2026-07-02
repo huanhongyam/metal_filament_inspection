@@ -39,7 +39,7 @@ public class ApplicationScenarioController {
     @GetMapping("/list")
     public Result<PageDTO> getScenarioList(
             @RequestParam(value = "current", defaultValue = "1") Integer current,
-            @RequestParam(value = "wireType", defaultValue = "Cu") String wireType,
+            @RequestParam(value = "wireType", required = false) String wireType,
             @RequestParam(value = "scenarioName",required = false) String scenarioName
     ) {
         Long userId = UserHolder.getUserId();
@@ -54,7 +54,7 @@ public class ApplicationScenarioController {
     @Operation(summary = "根据应用场景编号查询应用场景信息")
     @GetMapping("/{scenarioCode}")
     public Result<ApplicationScenarioDTO> getScenarioByCode(
-            @PathVariable @Pattern(regexp = "^\\d{2}$", message = "应用场景编号必须是数字") Long scenarioCode) {
+            @PathVariable  Long scenarioCode) {
 
         Long userId = UserHolder.getUserId();
         log.info("用户{}查询应用场景信息，场景编号：{}", userId, scenarioCode);

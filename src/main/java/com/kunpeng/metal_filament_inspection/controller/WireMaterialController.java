@@ -5,6 +5,7 @@ import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
 import com.kunpeng.metal_filament_inspection.domain.dto.*;
 import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
 import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialPassRateVO;
+import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialVO;
 import com.kunpeng.metal_filament_inspection.service.IWireMaterialService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -61,8 +62,16 @@ public class WireMaterialController {
      */
     @Operation(summary = "查询线材合格率,合格数量，不合格数量")
     @GetMapping("/pass-param")
-    public Result<WireMaterialPassRateVO> getWireMaterialPassParam(@RequestParam String yearMonth) {
+    public Result<List<WireMaterialPassRateVO>> getWireMaterialPassParam(@RequestParam String yearMonth) {
         return Result.success(wireMaterialService.getPassRateByYearMonth(yearMonth));
+    }
+    @Operation(summary = "根据批次卷序查询线材表面缺陷数据")
+    @GetMapping("/info")
+    public Result<Long> getWireMaterialByBatchNumber(
+            @RequestParam Long batchNo,
+            @RequestParam Long rollNo
+    ) {
+        return Result.success(wireMaterialService.queryByBatchNoWithRollNo(batchNo,rollNo));
     }
     /**
      * 根据批次号查询线材信息
@@ -102,7 +111,7 @@ public class WireMaterialController {
      * 增加线材记录
      * 权限：无需认证（公开接口）
      */
-    @Operation(summary = "创建设备")
+    @Operation(summary = "增加线材记录")
     @PostMapping
     public Result<Boolean> createDevice(@RequestBody WireMaterialSaveDTO wireMaterialSaveDTO) {
         return wireMaterialService.saveWireMaterial(wireMaterialSaveDTO);

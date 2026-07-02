@@ -3,6 +3,7 @@ package com.kunpeng.metal_filament_inspection.amqp.listener;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kunpeng.metal_filament_inspection.domain.dto.TaskDTO;
+import com.kunpeng.metal_filament_inspection.domain.dto.WireDTO;
 import com.kunpeng.metal_filament_inspection.utils.SystemConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -33,10 +34,11 @@ public class IoTAmqpSurfaceListener {
             // 定位到 services[0].properties."1"
             JsonNode dataNode1 = root.at(SystemConstants.HUAWEI_IOT_MESSAGE_SURFACE_PREFIX);
             if (!dataNode1.isMissingNode()) {
-                TaskDTO taskDTO = objectMapper.convertValue(dataNode1, TaskDTO.class);
-                Long batchNumber = taskDTO.getBatchNumber();
-                rabbitTemplate.convertAndSend(SystemConstants.RABBITMQ_EXCHANGE_SENDDOWN_EXCHANGE,SystemConstants.RABBITMQ_EXCHANGE_SENDDOWN_TASK,taskDTO);
-                log.info("📤 下发任务已发送至 senddown.task, batchNumber={}", batchNumber);
+                WireDTO wireDTO = objectMapper.convertValue(dataNode1, WireDTO.class);
+                Long batchNo = wireDTO.getBatchNo();
+                Long rollNo = wireDTO.getRollNo();
+                rabbitTemplate.convertAndSend(SystemConstants.RABBITMQ_EXCHANGE_SENDDOWN_EXCHANGE,SystemConstants.RABBITMQ_EXCHANGE_SENDDOWN_TASK,wireDTO);
+                log.info("📤 下发任务已发送至 senddown.task, batchNo={},rollNo={}", batchNo,rollNo);
             }
 
 

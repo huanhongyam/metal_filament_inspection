@@ -26,11 +26,10 @@ import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -233,35 +232,60 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         return Result.success(successCount);
     }
 
-    @Override
-    public WireMaterialPassRateVO getPassRateByYearMonth(String yearMonth) {
-        // 1. 解析年月，构造时间范围,格式为 yyyy-MM
+    public List<WireMaterialPassRateVO> getPassRateByYearMonth(String yearMonth) {
+        // 1. 解析年月
         YearMonth ym = YearMonth.parse(yearMonth);
         LocalDateTime start = ym.atDay(1).atStartOfDay();
         LocalDateTime end = ym.atEndOfMonth().atTime(23, 59, 59);
-        // 2. 构建查询条件
-        LambdaQueryWrapper<WireMaterial> baseWrapper = new LambdaQueryWrapper<>();
-        baseWrapper.between(WireMaterial::getCreateTime, start, end);
-        // 3. 查询该月总记录数
-        Long totalCount = wireMaterialMapper.selectCount(baseWrapper);
-        // 4. 查询该月 PASS 记录数
-        baseWrapper.eq(WireMaterial::getModelEvaluationResult, "PASS");
-        Long passCount = wireMaterialMapper.selectCount(baseWrapper);
-        // 5. 计算不合格数
-        Long failCount = (totalCount != null ? totalCount : 0L)
-                - (passCount != null ? passCount : 0L);
-        // 6. 计算合格率（百分比，保留两位小数）
-        BigDecimal passRate = BigDecimal.ZERO;
-        if (totalCount != null && totalCount > 0) {
-            passRate = BigDecimal.valueOf(passCount == null ? 0 : passCount)
-                    .multiply(BigDecimal.valueOf(100))          // 转为百分比
-                    .divide(BigDecimal.valueOf(totalCount), 2, RoundingMode.HALF_UP);
+        // 2. 查询该月所有记录
+        LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(WireMaterial::getCreateTime, WireMaterial::getModelEvaluationResult)
+                .between(WireMaterial::getCreateTime, start, end);
+        List<WireMaterial> records = wireMaterialMapper.selectList(wrapper);
+
+        if (records.isEmpty()) {
+            return Collections.emptyList();
         }
-        // 7. 封装 DTO
-        WireMaterialPassRateVO dto = new WireMaterialPassRateVO();
-        dto.setPassRate(passRate);
-        dto.setPassCount(passCount == null ? 0L : passCount);
-        dto.setFailCount(failCount);
-        return dto;
+        // 3. 用两个 Map 分别统计总数量和通过数量
+        Map<LocalDate, Long> totalMap = new LinkedHashMap<>();
+        Map<LocalDate, Long> passMap = new LinkedHashMap<>();
+        for (WireMaterial record : records) {
+            LocalDate day = record.getCreateTime().toLocalDate();
+            // 累加总数
+            totalMap.put(day, totalMap.getOrDefault(day, 0L) + 1);
+            // 累加通过数（直接比较枚举常量）
+            if (record.getModelEvaluationResult() == WireMaterial.EvaluationResult.PASS) {
+                passMap.put(day, passMap.getOrDefault(day, 0L) + 1);
+            }
+        }
+        // 4. 组装成 VO 列表
+        List<WireMaterialPassRateVO> result = new ArrayList<>();
+        for (Map.Entry<LocalDate, Long> entry : totalMap.entrySet()) {
+            LocalDate day = entry.getKey();
+            Long total = entry.getValue();
+            Long pass = passMap.getOrDefault(day, 0L);
+            Long fail = total - pass;
+
+            BigDecimal rate = BigDecimal.ZERO;
+            if (total > 0) {
+                rate = BigDecimal.valueOf(pass)
+                        .multiply(BigDecimal.valueOf(100))
+                        .divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP);
+            }
+            WireMaterialPassRateVO vo = new WireMaterialPassRateVO();
+            vo.setDay(day);
+            vo.setPassRate(rate);
+            vo.setPassCount(pass);
+            vo.setFailCount(fail);
+            result.add(vo);
+        }
+        result.sort(Comparator.comparing(WireMaterialPassRateVO::getDay));
+        return result;
+    }
+
+    @Override
+    public Long queryByBatchNoWithRollNo(Long batchNo, Long rollNo) {
+        Long batchNumber = query().eq("batch_no", batchNo).eq("roll_no", rollNo).one().getBatchNumber();
+        return batchNumber;
     }
 }

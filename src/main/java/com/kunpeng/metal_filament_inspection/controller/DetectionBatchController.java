@@ -2,6 +2,7 @@ package com.kunpeng.metal_filament_inspection.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.kunpeng.metal_filament_inspection.domain.dto.DetectionBatchDTO;
+import com.kunpeng.metal_filament_inspection.domain.dto.PageDTO;
 import com.kunpeng.metal_filament_inspection.domain.dto.Result;
 import com.kunpeng.metal_filament_inspection.service.IDetectionBatchService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,5 +32,10 @@ public class DetectionBatchController {
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10",required = false) Integer size) {
         return Result.success(detectionBatchService.listRecentDefectData(current, size));
+    }
+    @Operation(summary = "分页查询缺陷的线材表面缺陷数据")
+    @GetMapping("/list")
+    public Result<PageDTO> getDetectionBatchList(@RequestParam(value = "current", defaultValue = "1") Integer current) {
+        return Result.success(detectionBatchService.listPage(current));
     }
 }
