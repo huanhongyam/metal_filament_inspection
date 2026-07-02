@@ -8,13 +8,17 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.kunpeng.metal_filament_inspection.domain.dto.*;import com.kunpeng.metal_filament_inspection.domain.entity.User;
+import com.kunpeng.metal_filament_inspection.domain.dto.*;import com.kunpeng.metal_filament_inspection.domain.entity.DetectionBatch;
+import com.kunpeng.metal_filament_inspection.domain.entity.User;
 import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
+import com.kunpeng.metal_filament_inspection.domain.vo.WireInfoWithDetectionInfo;
 import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialPassRateVO;
 import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialVO;
+import com.kunpeng.metal_filament_inspection.mapper.DetectionBatchMapper;
 import com.kunpeng.metal_filament_inspection.mapper.WireMaterialMapper;
 import com.kunpeng.metal_filament_inspection.service.IUserService;
 import com.kunpeng.metal_filament_inspection.service.IWireMaterialService;
+import com.kunpeng.metal_filament_inspection.utils.DetectionSummary;
 import com.kunpeng.metal_filament_inspection.utils.SystemConstants;
 import com.kunpeng.metal_filament_inspection.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +44,8 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
     private IUserService userService;
     @Autowired
     private WireMaterialMapper wireMaterialMapper;
+    @Autowired
+    private DetectionBatchMapper detectionBatchMapper;
     @Override
     public List<WireMaterialDTO> listQueryPage(Integer limit, WireMaterialQueryDTO queryDTO) {
         LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
@@ -109,8 +115,9 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
     @Override
     public PageDTO<WireMaterialVO> listPage(Integer current) {
         Page<WireMaterial> page = new Page<>(current, SystemConstants.DEFAULT_PAGE_SIZE);
-        // 执行分页查询
-        IPage<WireMaterial> pageResult = page(page, null);
+        LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
+        wrapper.orderByDesc(WireMaterial::getCreateTime);
+        IPage<WireMaterial> pageResult = page(page, wrapper);
         // 转换当前页数据为 DTO
         List<WireMaterialVO> dtoList = pageResult.getRecords().stream()
                 .map(item -> BeanUtil.copyProperties(item, WireMaterialVO.class))
@@ -287,5 +294,60 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
     public Long queryByBatchNoWithRollNo(Long batchNo, Long rollNo) {
         Long batchNumber = query().eq("batch_no", batchNo).eq("roll_no", rollNo).one().getBatchNumber();
         return batchNumber;
+    }
+
+    @Override
+    public Result<WireInfoWithDetectionInfo> queryWireMaterialByBatchNoWithRollNo(WireDTO wireDTO) {
+        // 1. 查询线材基础信息
+        WireMaterial wireMaterial = query()
+                .eq("batch_no", wireDTO.getBatchNo())
+                .eq("roll_no", wireDTO.getRollNo())
+                .one();
+        if (wireMaterial == null) {
+            return Result.error("未找到对应的线材记录");
+        }
+
+        // 2. 查询该批次的所有表面缺陷数据
+        LambdaQueryWrapper<DetectionBatch> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(DetectionBatch::getBatchNumber, wireMaterial.getBatchNumber());
+        List<DetectionBatch> detectionBatches = detectionBatchMapper.selectList(wrapper);
+
+        // 3. 转换 DTO 并聚合
+        List<DetectionBatchDTO> dtoList = detectionBatches.stream()
+                .map(b -> BeanUtil.copyProperties(b, DetectionBatchDTO.class))
+                .collect(Collectors.toList());
+        DetectionBatchSummaryDTO summary = DetectionSummary.summarizeByBatchLoop(dtoList);
+
+        // 4. 拼接返回
+        WireInfoWithDetectionInfo.WireInfoWithDetectionInfoBuilder builder = WireInfoWithDetectionInfo.builder()
+                .batchNumber(wireMaterial.getBatchNumber())
+                .deviceId(wireMaterial.getDeviceId())
+                .diameter(wireMaterial.getDiameter())
+                .resistance(wireMaterial.getResistance())
+                .extensibility(wireMaterial.getExtensibility())
+                .weight(wireMaterial.getWeight())
+                .manufacturer(wireMaterial.getManufacturer())
+                .responsiblePerson(wireMaterial.getResponsiblePerson())
+                .processType(wireMaterial.getProcessType())
+                .scenarioCode(wireMaterial.getScenarioCode())
+                .batchNo(wireMaterial.getBatchNo())
+                .rollNo(wireMaterial.getRollNo())
+                .modelConfidence(wireMaterial.getModelConfidence())
+                .modelEvaluationResult(wireMaterial.getModelEvaluationResult() != null
+                        ? wireMaterial.getModelEvaluationResult().name()
+                        : null)
+                .createTime(wireMaterial.getCreateTime());
+
+        // 5. 填充检测缺陷聚合数据
+        if (summary != null) {
+            builder.avgConfidence(summary.getAvgConfidence())
+                    .scratchCount(summary.getScratchCount())
+                    .blockDefectCount(summary.getBlockDefectCount())
+                    .clusterDefectCount(summary.getClusterDefectCount())
+                    .metalBurrCount(summary.getMetalBurrCount())
+                    .scuffCount(summary.getScuffCount());
+        }
+
+        return Result.success(builder.build());
     }
 }

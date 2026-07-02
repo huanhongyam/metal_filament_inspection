@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
 import com.kunpeng.metal_filament_inspection.domain.dto.*;
 import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
+import com.kunpeng.metal_filament_inspection.domain.vo.WireInfoWithDetectionInfo;
 import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialPassRateVO;
 import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialVO;
 import com.kunpeng.metal_filament_inspection.service.IWireMaterialService;
@@ -72,6 +73,15 @@ public class WireMaterialController {
             @RequestParam Long rollNo
     ) {
         return Result.success(wireMaterialService.queryByBatchNoWithRollNo(batchNo,rollNo));
+    }
+
+    @Operation(summary = "根据批次卷序查询线材信息,缺陷聚合数据")
+    @GetMapping("/info-with-detection")
+    public Result<WireInfoWithDetectionInfo> getWireInfoWithDetection(
+            @RequestParam Long batchNo,
+            @RequestParam Long rollNo) {
+        WireDTO wireDTO = new WireDTO(batchNo,rollNo);
+        return wireMaterialService.queryWireMaterialByBatchNoWithRollNo(wireDTO);
     }
     /**
      * 根据批次号查询线材信息
@@ -159,15 +169,5 @@ public class WireMaterialController {
         log.info("Agent 批量回写评估结果，共 {} 条", dtoList.size());
         return wireMaterialService.updateEvaluationBatch(dtoList);
     }
-//    /**
-//     * 根据批次卷序查询线材信息
-//     * 权限：无需认证（公开接口）
-//     */
-//    @Operation(summary = "根据批次卷序查询线材信息")
-//    @GetMapping("/info")
-//    public Result<WireMaterialDTO> getWireMaterialByBatchNoWithRollNo(
-//            @RequestBody WireDTO wireDTO) {
-//        return new Result<>();
-//    }
 
 }
