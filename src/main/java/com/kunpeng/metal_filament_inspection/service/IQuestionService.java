@@ -5,6 +5,7 @@ import com.kunpeng.metal_filament_inspection.domain.dto.QuestionAskDTO;
 import com.kunpeng.metal_filament_inspection.domain.dto.Result;
 import com.kunpeng.metal_filament_inspection.domain.entity.Question;
 import com.kunpeng.metal_filament_inspection.domain.vo.QuestionVO;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 
@@ -24,4 +25,9 @@ public interface IQuestionService extends IService<Question> {
      * 分页查询问题列表
      */
     List<QuestionVO> listPage(Integer current, String deviceId, Integer responseStatus);
+
+    /**
+     * 流式 AI 提问（SSE）
+     */
+    SseEmitter askStream(Long userId, QuestionAskDTO dto);
 }
