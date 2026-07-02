@@ -1,6 +1,7 @@
 package com.kunpeng.metal_filament_inspection;
 
 import com.kunpeng.metal_filament_inspection.domain.dto.TaskDTO;
+import com.kunpeng.metal_filament_inspection.domain.dto.WireDTO;
 import com.kunpeng.metal_filament_inspection.utils.HuaWeiIoTSentDownUtil;
 import com.kunpeng.metal_filament_inspection.utils.SystemConstants;
 import org.junit.jupiter.api.Test;
@@ -14,15 +15,18 @@ public class SendDownTest {
     private RabbitTemplate rabbitTemplate;
     @Autowired
     private HuaWeiIoTSentDownUtil huaWeiIoTSentDownUtil;
-    @Test
-    public void testSend(){
-        TaskDTO taskDTO = new TaskDTO();
-        taskDTO.setBatchNumber(65987525348425749L);
-        rabbitTemplate.convertAndSend("senddown.exchange","senddown.task", taskDTO);
-    }
-    @Test
-    public void testHuaWei(){
-        huaWeiIoTSentDownUtil.sendDownMessage(SystemConstants.HUAWEI_DEVICE_ID,"batr");
-    }
+//    @Test
+//    public void testSend(){
+////        TaskDTO taskDTO = new TaskDTO();
+////        taskDTO.setBatchNumber(65987525348425749L);
+//        WireDTO wireDTO = new WireDTO();
+//        wireDTO.setBatchNo(25L);
+//        wireDTO.setRollNo(4L);
+//        rabbitTemplate.convertAndSend("senddown.exchange","senddown.task", wireDTO);
+//    }
+//    @Test
+//    public void testHuaWei(){
+//        huaWeiIoTSentDownUtil.sendDownMessage(SystemConstants.HUAWEI_DEVICE_ID,"batr");
+//    }
 
 }

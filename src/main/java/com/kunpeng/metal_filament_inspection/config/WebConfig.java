@@ -19,6 +19,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .addPathPatterns("/api/scenario/**")
                 .addPathPatterns("/api/device/**")
                 .addPathPatterns("/api/wire-material/**")
+                .addPathPatterns("/api/question/**")
                 .addPathPatterns("/hi")           // 拦截请求测试
                 .excludePathPatterns("/static/**", "/error","/api/user/login"); // 排除静态资源和错误页
     }

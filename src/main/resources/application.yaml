@@ -5,14 +5,14 @@ spring:
     name: metal_filament_inspection
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://10.168.89.206:3306/metal_filament_inspection?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://121.40.160.220:3306/metal_filament_inspection?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
-    password: 123456
+    password: Zzh123456
   data:
     redis:
-      host: 10.168.89.206
+      host: 121.40.160.220
       port: 6379
-      password: 123321
+      password: Zzh123456
       lettuce:
         pool:
           max-active: 10
@@ -20,14 +20,20 @@ spring:
           min-idle: 1
           time-between-eviction-runs: 10s
   rabbitmq:
-    host: 10.168.89.206 # 你的虚拟机IP
+    host: 121.40.160.220 # 你的虚拟机IP
     port: 5672 # 端口
     virtual-host: /wirematerial # 虚拟主机
     username: kunpeng # 用户名
-    password: 123321 # 密码
+    password: Zzh123456? # 密码
     listener:
       simple:
         prefetch: 1
+        retry:
+          enabled: true
+          initial-interval: 1000ms
+          multiplier: 1
+          max-attempts: 3
+          stateless: false
 mybatis-plus:
   type-aliases-package: com.kunpeng.metal_filament_inspection.domain # 别名扫描包
 logging:

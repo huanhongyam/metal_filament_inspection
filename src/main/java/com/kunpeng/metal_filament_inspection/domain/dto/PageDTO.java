@@ -9,5 +9,5 @@ public class PageDTO<T> {
     private List<T> records;
     private Long total;
     private Integer currentPage;
-    private Integer PageSize;
+    private Integer pageSize;
 }

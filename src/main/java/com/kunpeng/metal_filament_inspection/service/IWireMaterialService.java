@@ -29,7 +29,8 @@ public interface IWireMaterialService extends IService<WireMaterial> {
     Result<Boolean> updateEvaluation(Long batchNumber, @Valid WireMaterialUpdateDTO dto);
 
     Result<Integer> updateEvaluationBatch(@Valid List<WireMaterialUpdateDTO> dtoList);
+    
+    List<WireMaterialPassRateVO> getPassRateByYearMonth(String yearMonth);
 
-
-    WireMaterialPassRateVO getPassRateByYearMonth(String yearMonth);
+    Long queryByBatchNoWithRollNo(Long batchNo, Long rollNo);
 }

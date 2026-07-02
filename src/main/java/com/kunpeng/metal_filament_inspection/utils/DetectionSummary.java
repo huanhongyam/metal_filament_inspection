@@ -14,9 +14,9 @@ public class DetectionSummary {
      * @param list 原始检测数据列表
      * @return 按批号聚合后的汇总列表
      */
-    public static List<DetectionBatchSummaryDTO> summarizeByBatchLoop(List<DetectionBatchDTO> list) {
+    public static DetectionBatchSummaryDTO summarizeByBatchLoop(List<DetectionBatchDTO> list) {
         if (list == null || list.isEmpty()) {
-            return Collections.emptyList();
+            return null;
         }
 
         Map<Long, DetectionBatchSummaryDTO> map = new HashMap<>();
@@ -46,6 +46,18 @@ public class DetectionSummary {
             }
         }
 
-        return new ArrayList<>(map.values());
+        return map.values().iterator().next();
     }
+    public static Map<Long, DetectionBatchSummaryDTO> summarizeByBatchGroup(
+            Map<Long, List<DetectionBatchDTO>> groupedData) {
+        Map<Long, DetectionBatchSummaryDTO> result = new HashMap<>();
+        for (Map.Entry<Long, List<DetectionBatchDTO>> entry : groupedData.entrySet()) {
+            DetectionBatchSummaryDTO summary = summarizeByBatchLoop(entry.getValue());
+            if (summary != null) {
+                result.put(entry.getKey(), summary);
+            }
+        }
+        return result;
+    }
+
 }

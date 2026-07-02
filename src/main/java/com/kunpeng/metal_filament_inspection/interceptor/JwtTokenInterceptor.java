@@ -52,6 +52,10 @@ public class JwtTokenInterceptor implements HandlerInterceptor {
         try {
             if (StrUtil.equals(agentToken, SystemConstants.AGENT_TOKEN)){
                 log.info("agent调用");
+                LoginUser loginUser = new LoginUser();
+                loginUser.setUserId(100L);
+                loginUser.setRoleId(1);
+                UserHolder.setLoginUser(loginUser);
                 return true;
             }
             log.info("jwt校验:{}", token);

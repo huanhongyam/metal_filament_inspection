@@ -24,7 +24,7 @@ public class OpencvConfig {
                 System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
             }
         } catch (UnsatisfiedLinkError e) {
-            throw new RuntimeException("OpenCV 库加载失败，请检查配置", e);
+            log.warn("OpenCV 库未安装，YOLO 检测不可用");
         }
     }
 }

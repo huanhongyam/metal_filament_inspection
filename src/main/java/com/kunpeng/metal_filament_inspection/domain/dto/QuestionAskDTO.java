@@ -9,7 +9,7 @@ import lombok.Data;
 public class QuestionAskDTO {
 
     @NotBlank(message = "设备ID不能为空")
-    @Schema(description = "设备ID", example = "6a32861318855b39c5258e08_test")
+    @Schema(description = "设备ID", example = "非设备提问")
     private String deviceId;
 
     @NotBlank(message = "提问内容不能为空")
