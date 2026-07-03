@@ -38,11 +38,32 @@ public class UserController {
         return userService.login(loginForm);
     }
     /**
-     * 发送验证码
+     * 邮箱验证码登录功能
      */
-    @Operation(summary = "发送验证码")
+    @Operation(summary = "邮箱验证码登录功能")
+    @PostMapping("/login-email")
+    public Result<String> loginWithEmail(@RequestParam String email,@RequestParam String code){
+        // 实现登录功能
+        return userService.loginWithEmail(email,code);
+    }
+    /**
+     * 发送登录验证码
+     */
+    @Operation(summary = "发送登录验证码")
+    @GetMapping("/email-login")
+    public Result<String> sendLoginEmailCode(@RequestParam String email){
+        String s = verificationCodeUtil.sendLoginEmailCode(email);
+        if (StrUtil.isBlank(s)){
+            return Result.error("验证码发送失败，请稍后重试");
+        }
+        return Result.success("发送验证码成功");
+    }
+    /**
+     * 发送注册验证码
+     */
+    @Operation(summary = "发送注册验证码")
     @PostMapping("/email")
-    public Result<String> login(@RequestParam String email){
+    public Result<String> registerEmail(@RequestParam String email){
         // 实现登录功能
         String s = verificationCodeUtil.sendVerificationCode(email);
         if (StrUtil.isBlank(s)){
@@ -61,10 +82,11 @@ public class UserController {
     }
     @Operation(summary = "查找当前用户信息")
     @GetMapping("/me")
-    public Result<Long> me(){
+    public Result<String> me(){
         // 获取当前登录的用户Id并返回
         Long user = UserHolder.getUserId();
-        return Result.success(user);
+        String userName = userService.getById(user).getUserName();
+        return Result.success(userName);
     }
     @Operation(summary = "根据ID查找用户信息")
     @GetMapping("/{id}")
