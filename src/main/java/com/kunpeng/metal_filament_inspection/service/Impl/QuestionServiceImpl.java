@@ -202,6 +202,8 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
 
         // 2. 创建 SseEmitter（5 分钟超时）
         SseEmitter emitter = new SseEmitter(300_000L);
+        emitter.onCompletion(() -> log.info("SSE 流正常完成 — questionId: {}", question.getId()));
+        emitter.onTimeout(() -> log.warn("SSE 流超时 — questionId: {}", question.getId()));
 
         // 3. 异步执行流式调用
         CompletableFuture.runAsync(() -> {
@@ -235,9 +237,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
                                         String content = node.path("content").asText("");
                                         if (!content.isEmpty()) {
                                             fullResponse.append(content);
-                                            emitter.send(SseEmitter.event()
-                                                    .name("message")
-                                                    .data(Map.of("content", content)));
+                                            sendSafe(emitter, "message", content);
                                         }
                                     }
                                 }
@@ -247,28 +247,42 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
                 );
 
                 // 4. 发送完成事件
-                emitter.send(SseEmitter.event()
-                        .name("done")
-                        .data(Map.of("content", "", "done", true)));
-                emitter.complete();
-
-                // 5. 回写数据库
+                sendSafeDone(emitter, fullResponse.toString());
                 updateQuestionResponse(question.getId(), fullResponse.toString());
 
             } catch (Exception e) {
                 log.error("流式问答失败", e);
-                try {
-                    emitter.send(SseEmitter.event()
-                            .name("error")
-                            .data(Map.of("error", e.getMessage())));
-                } catch (Exception ex) {
-                    log.error("发送错误事件失败", ex);
-                }
-                emitter.completeWithError(e);
+                sendSafeError(emitter, e.getMessage());
                 updateQuestionResponse(question.getId(), "[AI 服务不可用: " + e.getMessage() + "]");
             }
         }, streamExecutor);
 
         return emitter;
+    }
+
+    private void sendSafe(SseEmitter emitter, String name, String content) {
+        try {
+            emitter.send(SseEmitter.event().name(name).data(Map.of("content", content)));
+        } catch (Exception e) {
+            // 客户端已断连，忽略
+        }
+    }
+
+    private void sendSafeDone(SseEmitter emitter, String finalContent) {
+        try {
+            emitter.send(SseEmitter.event().name("done").data(Map.of("content", "", "done", true)));
+            emitter.complete();
+        } catch (Exception e) {
+            // 客户端已断连，忽略
+        }
+    }
+
+    private void sendSafeError(SseEmitter emitter, String errorMsg) {
+        try {
+            emitter.send(SseEmitter.event().name("error").data(Map.of("error", errorMsg)));
+            emitter.completeWithError(new RuntimeException(errorMsg));
+        } catch (Exception e) {
+            // 客户端已断连，忽略
+        }
     }
 }

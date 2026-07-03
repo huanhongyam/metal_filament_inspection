@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -20,6 +21,10 @@ public interface IWireMaterialService extends IService<WireMaterial> {
     Result<Boolean> deleteById(@NotBlank(message = "批次号不能为空") Long batchNumber);
 
     PageDTO listPage(Integer current);
+
+    PageDTO listPageWithFilter(Integer current, String deviceId, String scenarioCode, Long batchNo,
+                                String manufacturer, String responsiblePerson, String modelEvaluationResult,
+                                LocalDate startDate, LocalDate endDate);
 
     Result<Boolean> saveWireMaterial(WireMaterialSaveDTO wireMaterialSaveDTO);
 

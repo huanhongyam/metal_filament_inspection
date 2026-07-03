@@ -131,6 +131,56 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
     }
 
     @Override
+    public PageDTO<WireMaterialVO> listPageWithFilter(Integer current, String deviceId, String scenarioCode,
+                                                       Long batchNo, String manufacturer, String responsiblePerson,
+                                                       String modelEvaluationResult, LocalDate startDate, LocalDate endDate) {
+        Page<WireMaterial> page = new Page<>(current, SystemConstants.DEFAULT_PAGE_SIZE);
+        LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
+
+        if (StringUtils.hasText(deviceId)) {
+            wrapper.eq(WireMaterial::getDeviceId, deviceId);
+        }
+        if (StringUtils.hasText(scenarioCode)) {
+            wrapper.eq(WireMaterial::getScenarioCode, scenarioCode);
+        }
+        if (batchNo != null) {
+            wrapper.eq(WireMaterial::getBatchNo, batchNo);
+        }
+        if (StringUtils.hasText(manufacturer)) {
+            wrapper.eq(WireMaterial::getManufacturer, manufacturer);
+        }
+        if (StringUtils.hasText(responsiblePerson)) {
+            wrapper.eq(WireMaterial::getResponsiblePerson, responsiblePerson);
+        }
+        if (StringUtils.hasText(modelEvaluationResult)) {
+            try {
+                wrapper.eq(WireMaterial::getModelEvaluationResult,
+                        WireMaterial.EvaluationResult.valueOf(modelEvaluationResult));
+            } catch (IllegalArgumentException e) {
+                log.warn("无效的评估结果值：{}，忽略此条件", modelEvaluationResult);
+            }
+        }
+        if (startDate != null) {
+            wrapper.ge(WireMaterial::getCreateTime, startDate.atStartOfDay());
+        }
+        if (endDate != null) {
+            wrapper.le(WireMaterial::getCreateTime, endDate.atTime(23, 59, 59));
+        }
+        wrapper.orderByDesc(WireMaterial::getCreateTime);
+
+        IPage<WireMaterial> pageResult = page(page, wrapper);
+        List<WireMaterialVO> dtoList = pageResult.getRecords().stream()
+                .map(item -> BeanUtil.copyProperties(item, WireMaterialVO.class))
+                .collect(Collectors.toList());
+        PageDTO<WireMaterialVO> pageDTO = new PageDTO<>();
+        pageDTO.setCurrentPage((int) pageResult.getCurrent());
+        pageDTO.setPageSize((int) pageResult.getSize());
+        pageDTO.setTotal(pageResult.getTotal());
+        pageDTO.setRecords(dtoList);
+        return pageDTO;
+    }
+
+    @Override
     public Result<Boolean> saveWireMaterial(WireMaterialSaveDTO wireMaterialSaveDTO) {
         // 保存线材检测记录并返回结果
         WireMaterial wireMaterial = BeanUtil.copyProperties(wireMaterialSaveDTO, WireMaterial.class);
