@@ -63,6 +63,9 @@ public class IoTAmqpAddListener {
                     taskDTO.setBatchNumber(batchNumber);
                     String exchange = SystemConstants.RABBITMQ_EXCHANGE_DETECT_TASK;
                     rabbitTemplate.convertAndSend(exchange, "detect.task",taskDTO);
+                    rabbitTemplate.convertAndSend(
+                            "delay.exchange",
+                            SystemConstants.RABBITMQ_TASK_TRIGGER_EVALUATION,batchNumber);
                     log.info("📤 检测任务已发送至 detect.task, batchNumber={}", batchNumber);
             } else {
                 log.warn("未找到 properties.1 节点");

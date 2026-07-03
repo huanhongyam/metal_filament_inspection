@@ -41,4 +41,6 @@ public interface IWireMaterialService extends IService<WireMaterial> {
     Long queryByBatchNoWithRollNo(Long batchNo, Long rollNo);
 
     Result<WireInfoWithDetectionInfo> queryWireMaterialByBatchNoWithRollNo(WireDTO wireDTO);
+
+    Result<WireMaterialUpdateDTO> triggerEvaluation(Long batchNumber);
 }

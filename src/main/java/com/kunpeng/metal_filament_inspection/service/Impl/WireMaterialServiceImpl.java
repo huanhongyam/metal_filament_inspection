@@ -28,6 +28,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.http.*;
+import org.springframework.web.client.RestTemplate;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -46,6 +51,10 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
     private WireMaterialMapper wireMaterialMapper;
     @Autowired
     private DetectionBatchMapper detectionBatchMapper;
+    @Autowired
+    private RestTemplate restTemplate;
+    @Autowired
+    private ObjectMapper objectMapper;
     @Override
     public List<WireMaterialDTO> listQueryPage(Integer limit, WireMaterialQueryDTO queryDTO) {
         LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
@@ -399,5 +408,62 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         }
 
         return Result.success(builder.build());
+    }
+
+    @Override
+    public Result<WireMaterialUpdateDTO> triggerEvaluation(Long batchNumber) {
+        // 1. 查询线材
+        WireMaterial wm = query().eq("batch_number", batchNumber).one();
+        if (wm == null) {
+            return Result.error("批次号 " + batchNumber + " 不存在");
+        }
+
+        // 2. 调用 Python Agent4j 评估
+        String url = SystemConstants.AGENT4J_URL + "/api/v1/evaluate/single";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<WireMaterial> request = new HttpEntity<>(wm, headers);
+
+        log.info("触发单条评估 — 批次号：{}", batchNumber);
+        String aiResponse;
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+            if (response.getStatusCode() != HttpStatus.OK || !StringUtils.hasText(response.getBody())) {
+                log.error("Agent4j 评估异常 — status: {}", response.getStatusCode());
+                return Result.error("AI 评估服务异常");
+            }
+            aiResponse = response.getBody();
+        } catch (Exception e) {
+            log.error("调用 Agent4j 评估失败", e);
+            return Result.error("AI 评估服务不可用: " + e.getMessage());
+        }
+
+        // 3. 解析评估结果
+        WireMaterialUpdateDTO dto;
+        try {
+            JsonNode root = objectMapper.readTree(aiResponse);
+            int code = root.path("code").asInt(-1);
+            if (code != 200) {
+                return Result.error("AI 评估返回异常");
+            }
+            JsonNode data = root.path("data");
+            dto = new WireMaterialUpdateDTO();
+            dto.setBatchNumber(data.path("batchNumber").asLong());
+            dto.setModelEvaluationResult(data.path("modelEvaluationResult").asText());
+            dto.setModelConfidence(BigDecimal.valueOf(data.path("modelConfidence").asDouble()));
+            dto.setEvaluationMessage(data.path("evaluationMessage").asText());
+        } catch (Exception e) {
+            log.error("解析评估结果失败", e);
+            return Result.error("解析评估结果失败");
+        }
+
+        // 4. 回写数据库
+        Result<Boolean> updateResult = updateEvaluation(batchNumber, dto);
+        if (updateResult.getData() == null || !updateResult.getData()) {
+            return Result.error("评估结果回写失败");
+        }
+
+        log.info("单条评估完成 — 批次号：{}，结论：{}", batchNumber, dto.getModelEvaluationResult());
+        return Result.success(dto);
     }
 }

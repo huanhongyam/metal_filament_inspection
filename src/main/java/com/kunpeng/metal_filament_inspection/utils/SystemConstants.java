@@ -25,5 +25,8 @@ public class SystemConstants {
     public static final String USER_REGISTER = "user.register";
     public static final String USER_REGISTER_NORMAL_AVATAR_URL = "qingwa.jpg";
     public static final String QINIU_NORMAL_URL_PREFIX = "http://th8lfohjy.hn-bkt.clouddn.com/";
+    public static final String RABBITMQ_EXCHANGE_TRIGGER_EVALUATION = "triggerEvaluation.exchange";
+    public static final String RABBITMQ_QUEUE_TRIGGER_EVALUATION = "triggerEvaluation.queue";
+    public static final String RABBITMQ_TASK_TRIGGER_EVALUATION = "triggerEvaluation.task";
 
 }

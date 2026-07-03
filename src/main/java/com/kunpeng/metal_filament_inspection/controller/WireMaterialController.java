@@ -188,4 +188,16 @@ public class WireMaterialController {
         return wireMaterialService.updateEvaluationBatch(dtoList);
     }
 
+    /**
+     * 主动触发单条线材评估
+     * 权限：管理员（roleId=1）
+     */
+    @RequireAdmin
+    @Operation(summary = "主动触发单条线材评估")
+    @PostMapping("/{batchNumber}/trigger-evaluation")
+    public Result<WireMaterialUpdateDTO> triggerEvaluation(@PathVariable Long batchNumber) {
+        log.info("管理员触发单条评估 — 批次号：{}", batchNumber);
+        return wireMaterialService.triggerEvaluation(batchNumber);
+    }
+
 }

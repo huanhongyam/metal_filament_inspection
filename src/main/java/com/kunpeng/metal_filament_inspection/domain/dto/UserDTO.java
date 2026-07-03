@@ -18,4 +18,9 @@ public class UserDTO {
      * 头像URL
      */
     private String avatarUrl;
+
+    /**
+     * 邮箱
+     */
+    private String email;
 }
