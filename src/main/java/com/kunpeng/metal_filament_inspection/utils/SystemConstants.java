@@ -21,6 +21,7 @@ public class SystemConstants {
     public static final String AGENT4J_URL = "http://localhost:8081";
     public static final String HUAWEI_IOT_MESSAGE_AGENT_PREFIX = "/notify_data/body/services/0/properties/question";
     public static final String MAIL_SEND_CODE_KEY = "mail.send.code";
+    public static final String MAIL_SEND_LOGIN_CODE_KEY = "mail.send.login.code";
     public static final String USER_REGISTER = "user.register";
     public static final String USER_REGISTER_NORMAL_AVATAR_URL = "qingwa.jpg";
     public static final String QINIU_NORMAL_URL_PREFIX = "http://th8lfohjy.hn-bkt.clouddn.com/";

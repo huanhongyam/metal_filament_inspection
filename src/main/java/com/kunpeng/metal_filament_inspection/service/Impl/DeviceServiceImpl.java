@@ -62,7 +62,7 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         if (isSuccess) {
             log.info("管理员用户{}创建设备成功，设备ID：{}，设备代码：{}",
                     userId, device.getDeviceId(), device.getDeviceCode());
-            return Result.success();
+            return Result.success(true);
         } else {
             log.error("管理员用户{}创建设备失败，设备代码：{}", userId, device.getDeviceCode());
             return Result.error("创建设备失败，请稍后重试");

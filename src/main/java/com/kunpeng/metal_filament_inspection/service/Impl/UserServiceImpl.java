@@ -86,4 +86,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper,User> implements IUs
         return Result.success(save);
 
     }
+
+    @Override
+    public Result<String> loginWithEmail(String email, String code) {
+        // 1. 校验验证码
+        boolean b = verificationCodeUtil.verifyLoginCode(email, code);
+        if (!b) {
+            throw new BusinessException("验证码错误或已过期");
+        }
+        User user = query().eq("email", email).one();
+        // 2.登陆成功
+        String token = jwtUtil.generateToken(user.getId(),user.getUserName());
+        log.info("用户 [{}] 登录成功", user.getUserName());
+        return Result.success(token);
+    }
+
 }
