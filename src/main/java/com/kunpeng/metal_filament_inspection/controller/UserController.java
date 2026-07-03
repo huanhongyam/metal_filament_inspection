@@ -1,8 +1,10 @@
 package com.kunpeng.metal_filament_inspection.controller;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
 import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
 import com.kunpeng.metal_filament_inspection.domain.dto.Result;
+import com.kunpeng.metal_filament_inspection.domain.dto.UserDTO;
 import com.kunpeng.metal_filament_inspection.domain.dto.UserRegisterDTO;
 import com.kunpeng.metal_filament_inspection.domain.entity.User;
 import com.kunpeng.metal_filament_inspection.domain.dto.LoginFormDTO;
@@ -64,6 +66,10 @@ public class UserController {
     @Operation(summary = "发送注册验证码")
     @PostMapping("/email")
     public Result<String> registerEmail(@RequestParam String email){
+        User email1 = userService.query().eq("email", email).one();
+        if (email1 != null ){
+            return Result.error("用户已注册");
+        }
         // 实现登录功能
         String s = verificationCodeUtil.sendVerificationCode(email);
         if (StrUtil.isBlank(s)){
@@ -89,9 +95,12 @@ public class UserController {
         return Result.success(userName);
     }
     @Operation(summary = "根据ID查找用户信息")
-    @GetMapping("/{id}")
-    public Result<User> queryUserById(@PathVariable("id") Long id){
-        return Result.success(userService.getById(id));
+    @GetMapping("")
+    public Result<UserDTO> queryUserById(){
+        Long userId = UserHolder.getUserId();
+        User user = userService.getById(userId);
+        UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
+        return Result.success(userDTO);
     }
 
     @RequireAdmin
@@ -103,6 +112,10 @@ public class UserController {
     @Operation(summary = "修改用户名")
     @PutMapping("/username")
     public Result<Boolean> updateUsername(@RequestParam("username") String username){
+        String userEmail = userService.query().eq("user_name", username).one().getEmail();
+        if (StrUtil.isNotBlank(userEmail)){
+            return Result.error("用户名已存在");
+        }
         Long userId = UserHolder.getUserId();
         User user = User.builder()
                 .userName(username)
