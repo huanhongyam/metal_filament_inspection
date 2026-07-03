@@ -13,9 +13,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,6 +49,22 @@ public class WireMaterialController {
     @GetMapping("/list")
     public Result<PageDTO> getWireMaterialList(@RequestParam(value = "current", defaultValue = "1") Integer current) {
         return Result.success(wireMaterialService.listPage(current));
+    }
+
+    @Operation(summary = "条件分页查询线材列表")
+    @GetMapping("/page")
+    public Result<PageDTO> getWireMaterialPage(
+            @RequestParam(value = "current", defaultValue = "1") Integer current,
+            @RequestParam(value = "deviceId", required = false) String deviceId,
+            @RequestParam(value = "scenarioCode", required = false) String scenarioCode,
+            @RequestParam(value = "batchNo", required = false) Long batchNo,
+            @RequestParam(value = "manufacturer", required = false) String manufacturer,
+            @RequestParam(value = "responsiblePerson", required = false) String responsiblePerson,
+            @RequestParam(value = "modelEvaluationResult", required = false) String modelEvaluationResult,
+            @RequestParam(value = "startDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(value = "endDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return Result.success(wireMaterialService.listPageWithFilter(current, deviceId, scenarioCode,
+                batchNo, manufacturer, responsiblePerson, modelEvaluationResult, startDate, endDate));
     }
     /**
      * 查询线材条数

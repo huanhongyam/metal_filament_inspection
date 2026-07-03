@@ -20,7 +20,13 @@ public class WebConfig implements WebMvcConfigurer {
                 .addPathPatterns("/api/device/**")
                 .addPathPatterns("/api/wire-material/**")
                 .addPathPatterns("/api/question/**")
+                .addPathPatterns("/api/detection-batch/**")
                 .addPathPatterns("/hi")           // 拦截请求测试
-                .excludePathPatterns("/static/**", "/error","/api/user/login"); // 排除静态资源和错误页
+                .excludePathPatterns("/static/**",
+                        "/error",
+                        "/api/user/login",
+                        "/api/user/register-user",
+                        "/api/user/email",
+                        "/api/wire-material/info-with-detection"); // 排除
     }
 }

@@ -34,6 +34,20 @@ spring:
           multiplier: 1
           max-attempts: 3
           stateless: false
+  mail:
+    host: smtp.163.com        # 发信邮箱SMTP服务器地址
+    username: 17887440532@163.com # 邮箱地址
+    password: NFS7Q3AqHeJVUkJ8 # 授权码
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+          socketFactory:
+            port: 465
+            class: javax.net.ssl.SSLSocketFactory
 mybatis-plus:
   type-aliases-package: com.kunpeng.metal_filament_inspection.domain # 别名扫描包
 logging:

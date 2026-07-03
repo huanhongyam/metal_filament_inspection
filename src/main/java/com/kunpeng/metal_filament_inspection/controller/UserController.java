@@ -1,13 +1,18 @@
 package com.kunpeng.metal_filament_inspection.controller;
 
+import cn.hutool.core.util.StrUtil;
 import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
 import com.kunpeng.metal_filament_inspection.domain.dto.Result;
+import com.kunpeng.metal_filament_inspection.domain.dto.UserRegisterDTO;
 import com.kunpeng.metal_filament_inspection.domain.entity.User;
 import com.kunpeng.metal_filament_inspection.domain.dto.LoginFormDTO;
 import com.kunpeng.metal_filament_inspection.service.IUserService;
+import com.kunpeng.metal_filament_inspection.utils.QiniuUploadUtil;
 import com.kunpeng.metal_filament_inspection.utils.UserHolder;
+import com.kunpeng.metal_filament_inspection.utils.VerificationCodeUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +24,10 @@ import java.util.List;
 public class UserController {
     @Autowired
     private IUserService userService;
+    @Autowired
+    private VerificationCodeUtil verificationCodeUtil;
+    @Autowired
+    private QiniuUploadUtil qiniuUploadUtil;
     /**
      * 登录功能
      */
@@ -27,6 +36,28 @@ public class UserController {
     public Result<String> login(@RequestBody LoginFormDTO loginForm){
         // 实现登录功能
         return userService.login(loginForm);
+    }
+    /**
+     * 发送验证码
+     */
+    @Operation(summary = "发送验证码")
+    @PostMapping("/email")
+    public Result<String> login(@RequestParam String email){
+        // 实现登录功能
+        String s = verificationCodeUtil.sendVerificationCode(email);
+        if (StrUtil.isBlank(s)){
+            return Result.error("验证码发送失败，请稍后重试");
+        }
+        return Result.success("发送验证码成功");
+    }
+    /**
+     * 注册用户
+     */
+    @Operation(summary = "注册用户")
+    @PostMapping("/register-user")
+    public Result<Boolean> verifyCode(@RequestBody UserRegisterDTO userRegisterDTO,
+                                      @RequestParam String code) {
+        return userService.registerUserByEmail(userRegisterDTO,code);
     }
     @Operation(summary = "查找当前用户信息")
     @GetMapping("/me")
