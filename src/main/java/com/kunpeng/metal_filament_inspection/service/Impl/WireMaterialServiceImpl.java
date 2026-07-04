@@ -6,15 +6,13 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.conditions.query.QueryChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.kunpeng.metal_filament_inspection.domain.dto.*;import com.kunpeng.metal_filament_inspection.domain.entity.DetectionBatch;
 import com.kunpeng.metal_filament_inspection.domain.entity.User;
 import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
-import com.kunpeng.metal_filament_inspection.domain.vo.EarlyWarningVO;
-import com.kunpeng.metal_filament_inspection.domain.vo.WireInfoWithDetectionInfo;
-import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialPassRateVO;
-import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialVO;
+import com.kunpeng.metal_filament_inspection.domain.vo.*;
 import com.kunpeng.metal_filament_inspection.mapper.DetectionBatchMapper;
 import com.kunpeng.metal_filament_inspection.mapper.WireMaterialMapper;
 import com.kunpeng.metal_filament_inspection.service.IUserService;
@@ -22,6 +20,8 @@ import com.kunpeng.metal_filament_inspection.service.IWireMaterialService;
 import com.kunpeng.metal_filament_inspection.utils.DetectionSummary;
 import com.kunpeng.metal_filament_inspection.utils.SystemConstants;
 import com.kunpeng.metal_filament_inspection.utils.UserHolder;
+import com.kunpeng.metal_filament_inspection.utils.WireMaterialStats;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +56,8 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
     private RestTemplate restTemplate;
     @Autowired
     private ObjectMapper objectMapper;
+    @Resource
+    private WireMaterialStats wireMaterialStats;
     @Override
     public List<WireMaterialDTO> listQueryPage(Integer limit, WireMaterialQueryDTO queryDTO) {
         LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
@@ -557,6 +559,57 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         vo.setAnalysisTime(LocalDateTime.now());
 
         return Result.success(vo);
+    }
+
+    @Override
+    public WireMaterialPhysicalVO QueryWithBatchNoAvg(Long batchNo) {
+        if (batchNo == null){
+            LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
+            wrapper.orderByDesc(WireMaterial::getCreateTime)
+                    .last("LIMIT 1");
+            WireMaterial wireMaterial = baseMapper.selectOne(wrapper);
+            Long batchNo1 = wireMaterial.getBatchNo();
+            List<WireMaterial> rollList = query().eq("batch_no", batchNo1).list();
+            rollList.forEach(item -> {
+                wireMaterialStats.accept(item);
+            });
+            BigDecimal avgDiameter = wireMaterialStats.getAvgDiameter();
+            BigDecimal avgResistance = wireMaterialStats.getAvgResistance();
+            BigDecimal avgExtensibility = wireMaterialStats.getAvgExtensibility();
+            BigDecimal avgWeight = wireMaterialStats.getAvgWeight();
+            return WireMaterialPhysicalVO.builder()
+                    .batchNo(batchNo1)
+                    .diameter(avgDiameter)
+                    .weight(avgWeight)
+                    .resistance(avgResistance)
+                    .extensibility(avgExtensibility)
+                    .build();
+        }else {
+            List<WireMaterial> rollList = query().eq("batch_no", batchNo).list();
+            rollList.forEach(item -> {
+                wireMaterialStats.accept(item);
+            });
+            BigDecimal avgDiameter = wireMaterialStats.getAvgDiameter();
+            BigDecimal avgResistance = wireMaterialStats.getAvgResistance();
+            BigDecimal avgExtensibility = wireMaterialStats.getAvgExtensibility();
+            BigDecimal avgWeight = wireMaterialStats.getAvgWeight();
+            return WireMaterialPhysicalVO.builder()
+                    .batchNo(batchNo)
+                    .diameter(avgDiameter)
+                    .weight(avgWeight)
+                    .resistance(avgResistance)
+                    .extensibility(avgExtensibility)
+                    .build();
+        }
+    }
+
+    @Override
+    public List<WireMaterialPhysicalVO> QueryWithBatchNo(Long batchNo) {
+        List<WireMaterial> rollList = query().eq("batch_no", batchNo).list().stream().limit(10).toList();
+        List<WireMaterialPhysicalVO> wireMaterialPhysicalVOS = rollList.stream().map(item -> {
+            return BeanUtil.copyProperties(item, WireMaterialPhysicalVO.class);
+        }).collect(Collectors.toList());
+        return wireMaterialPhysicalVOS;
     }
 
     private List<EarlyWarningVO.WarningItem> buildTop3(List<EarlyWarningStatsDTO.GroupStats> list) {

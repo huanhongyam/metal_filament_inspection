@@ -51,7 +51,7 @@ public class WireMaterialDTO {
     private String sourceOriginRaw;
 
     /**
-     * 生产商
+     * 生产设备
      */
     private String manufacturer;
 
