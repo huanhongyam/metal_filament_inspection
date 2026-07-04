@@ -4,10 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
 import com.kunpeng.metal_filament_inspection.domain.dto.*;
 import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
-import com.kunpeng.metal_filament_inspection.domain.vo.EarlyWarningVO;
-import com.kunpeng.metal_filament_inspection.domain.vo.WireInfoWithDetectionInfo;
-import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialPassRateVO;
-import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialVO;
+import com.kunpeng.metal_filament_inspection.domain.vo.*;
 import com.kunpeng.metal_filament_inspection.service.IWireMaterialService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -41,6 +38,24 @@ public class WireMaterialController {
                                                                   @RequestBody(required = false) WireMaterialQueryDTO wireMaterialDTO
     ) {
         return Result.success(wireMaterialService.listQueryPage(limit,wireMaterialDTO));
+    }
+    /**
+     * 根据批次查询平均数据
+     * 权限：已认证用户
+     */
+    @Operation(summary = "根据批次查询平均数据")
+    @GetMapping("/list-batchNoAvg")
+    public Result<WireMaterialPhysicalVO> QueryWithBatchNoAvg(@RequestParam(required = false) Long batchNo) {
+        return Result.success(wireMaterialService.QueryWithBatchNoAvg(batchNo));
+    }
+    /**
+     * 根据批次查询数据
+     * 权限：已认证用户
+     */
+    @Operation(summary = "根据批次查询数据")
+    @GetMapping("/list-batchNo")
+    public Result<List<WireMaterialPhysicalVO>> QueryWithBatchNo(@RequestParam(required = false) Long batchNo) {
+        return Result.success(wireMaterialService.QueryWithBatchNo(batchNo));
     }
     /**
      * 分页查询线材列表
@@ -203,7 +218,7 @@ public class WireMaterialController {
 
     /**
      * 预警分析 — Agent 专用
-     * 返回按生产商/负责人/设备分组的不合格统计数据
+     * 返回按生产设备/负责人/设备分组的不合格统计数据
      */
     @Operation(summary = "Agent 获取预警统计数据")
     @GetMapping("/early-warning-stats")

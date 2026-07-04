@@ -59,7 +59,7 @@ public class WireInfoWithDetectionInfo {
     private BigDecimal weight;
 
     /**
-     * 生产商
+     * 生产设备
      */
     private String manufacturer;
 

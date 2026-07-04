@@ -6,6 +6,7 @@ import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
 import com.kunpeng.metal_filament_inspection.domain.vo.EarlyWarningVO;
 import com.kunpeng.metal_filament_inspection.domain.vo.WireInfoWithDetectionInfo;
 import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialPassRateVO;
+import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialPhysicalVO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
@@ -48,4 +49,8 @@ public interface IWireMaterialService extends IService<WireMaterial> {
     EarlyWarningStatsDTO getEarlyWarningStats(Integer hours);
 
     Result<EarlyWarningVO> triggerEarlyWarning(Integer hours);
+
+    WireMaterialPhysicalVO QueryWithBatchNoAvg(Long batchNo);
+
+    List<WireMaterialPhysicalVO> QueryWithBatchNo(Long batchNo);
 }
