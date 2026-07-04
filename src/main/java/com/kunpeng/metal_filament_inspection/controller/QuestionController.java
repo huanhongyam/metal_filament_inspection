@@ -1,5 +1,6 @@
 package com.kunpeng.metal_filament_inspection.controller;
 
+import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
 import com.kunpeng.metal_filament_inspection.domain.dto.QuestionAskDTO;
 import com.kunpeng.metal_filament_inspection.domain.dto.Result;
 import com.kunpeng.metal_filament_inspection.domain.vo.QuestionVO;
@@ -40,7 +41,7 @@ public class QuestionController {
         log.info("用户 {} 发起流式提问 — deviceId: {}", userId, dto.getDeviceId());
         return questionService.askStream(userId, dto);
     }
-
+    @RequireAdmin
     @Operation(summary = "分页查询问题记录")
     @GetMapping("/list")
     public Result<List<QuestionVO>> list(
@@ -49,7 +50,7 @@ public class QuestionController {
             @RequestParam(required = false) Integer responseStatus) {
         return Result.success(questionService.listPage(current, deviceId, responseStatus));
     }
-
+    @RequireAdmin
     @Operation(summary = "查询单条问题详情")
     @GetMapping("/{id}")
     public Result<QuestionVO> detail(@PathVariable Long id) {

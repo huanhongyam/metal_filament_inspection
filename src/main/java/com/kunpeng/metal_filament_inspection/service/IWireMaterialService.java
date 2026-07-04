@@ -3,6 +3,7 @@ package com.kunpeng.metal_filament_inspection.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.kunpeng.metal_filament_inspection.domain.dto.*;
 import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
+import com.kunpeng.metal_filament_inspection.domain.vo.EarlyWarningVO;
 import com.kunpeng.metal_filament_inspection.domain.vo.WireInfoWithDetectionInfo;
 import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialPassRateVO;
 import jakarta.validation.Valid;
@@ -43,4 +44,8 @@ public interface IWireMaterialService extends IService<WireMaterial> {
     Result<WireInfoWithDetectionInfo> queryWireMaterialByBatchNoWithRollNo(WireDTO wireDTO);
 
     Result<WireMaterialUpdateDTO> triggerEvaluation(Long batchNumber);
+
+    EarlyWarningStatsDTO getEarlyWarningStats(Integer hours);
+
+    Result<EarlyWarningVO> triggerEarlyWarning(Integer hours);
 }

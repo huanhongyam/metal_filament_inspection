@@ -11,6 +11,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.kunpeng.metal_filament_inspection.domain.dto.*;import com.kunpeng.metal_filament_inspection.domain.entity.DetectionBatch;
 import com.kunpeng.metal_filament_inspection.domain.entity.User;
 import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
+import com.kunpeng.metal_filament_inspection.domain.vo.EarlyWarningVO;
 import com.kunpeng.metal_filament_inspection.domain.vo.WireInfoWithDetectionInfo;
 import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialPassRateVO;
 import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialVO;
@@ -465,5 +466,134 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
 
         log.info("单条评估完成 — 批次号：{}，结论：{}", batchNumber, dto.getModelEvaluationResult());
         return Result.success(dto);
+    }
+
+    // 预警分析
+    @Override
+    public EarlyWarningStatsDTO getEarlyWarningStats(Integer hours) {
+        if (hours == null || hours <= 0) hours = 24;
+        LocalDateTime since = LocalDateTime.now().minusHours(hours);
+
+        LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(WireMaterial::getManufacturer, WireMaterial::getResponsiblePerson,
+                        WireMaterial::getDeviceId, WireMaterial::getModelEvaluationResult)
+                .ge(WireMaterial::getCreateTime, since);
+        List<WireMaterial> records = list(wrapper);
+
+        int total = records.size();
+        long failTotal = records.stream()
+                .filter(r -> r.getModelEvaluationResult() == WireMaterial.EvaluationResult.FAIL)
+                .count();
+
+        BigDecimal overallRate = total > 0
+                ? BigDecimal.valueOf(failTotal).multiply(BigDecimal.valueOf(100))
+                    .divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        EarlyWarningStatsDTO dto = new EarlyWarningStatsDTO();
+        dto.setHoursBack(hours);
+        dto.setTotalCount(total);
+        dto.setFailCount((int) failTotal);
+        dto.setOverallFailRate(overallRate);
+        dto.setByManufacturer(aggregateByField(records, "manufacturer"));
+        dto.setByResponsiblePerson(aggregateByField(records, "responsiblePerson"));
+        dto.setByDevice(aggregateByField(records, "deviceId"));
+        return dto;
+    }
+
+    private List<EarlyWarningStatsDTO.GroupStats> aggregateByField(List<WireMaterial> records, String field) {
+        Map<String, long[]> map = new LinkedHashMap<>();
+        for (WireMaterial r : records) {
+            String key = switch (field) {
+                case "manufacturer" -> r.getManufacturer();
+                case "responsiblePerson" -> r.getResponsiblePerson();
+                case "deviceId" -> r.getDeviceId();
+                default -> null;
+            };
+            if (key == null || key.isEmpty()) key = "未填写";
+            map.computeIfAbsent(key, k -> new long[2]);
+            map.get(key)[0]++; // total
+            if (r.getModelEvaluationResult() == WireMaterial.EvaluationResult.FAIL) {
+                map.get(key)[1]++; // fail
+            }
+        }
+        return map.entrySet().stream()
+                .map(e -> {
+                    EarlyWarningStatsDTO.GroupStats gs = new EarlyWarningStatsDTO.GroupStats();
+                    gs.setName(e.getKey());
+                    long tot = e.getValue()[0];
+                    long fail = e.getValue()[1];
+                    gs.setTotalCount(tot);
+                    gs.setFailCount(fail);
+                    gs.setFailRate(tot > 0
+                            ? BigDecimal.valueOf(fail).multiply(BigDecimal.valueOf(100))
+                                .divide(BigDecimal.valueOf(tot), 2, RoundingMode.HALF_UP)
+                            : BigDecimal.ZERO);
+                    return gs;
+                })
+                .sorted((a, b) -> b.getFailRate().compareTo(a.getFailRate()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Result<EarlyWarningVO> triggerEarlyWarning(Integer hours) {
+        if (hours == null || hours <= 0) hours = 24;
+
+        // 1. 本地聚合 stats → 构建结构化 top 3
+        EarlyWarningStatsDTO stats = getEarlyWarningStats(hours);
+        List<EarlyWarningVO.WarningItem> topManufacturers = buildTop3(stats.getByManufacturer());
+        List<EarlyWarningVO.WarningItem> topResponsiblePersons = buildTop3(stats.getByResponsiblePerson());
+        List<EarlyWarningVO.WarningItem> topDevices = buildTop3(stats.getByDevice());
+
+        // 2. 调 Agent4j — 仅传入 hours，由 Python 侧系统提示词驱动分析
+        String aiAnalysis = callEarlyWarningAgent(hours);
+
+        // 3. 组装 VO
+        EarlyWarningVO vo = new EarlyWarningVO();
+        vo.setTopManufacturers(topManufacturers);
+        vo.setTopResponsiblePersons(topResponsiblePersons);
+        vo.setTopDevices(topDevices);
+        vo.setAiAnalysis(aiAnalysis);
+        vo.setAnalysisTime(LocalDateTime.now());
+
+        return Result.success(vo);
+    }
+
+    private List<EarlyWarningVO.WarningItem> buildTop3(List<EarlyWarningStatsDTO.GroupStats> list) {
+        if (list == null || list.isEmpty()) return List.of();
+        return list.stream().limit(3).map(gs -> {
+            EarlyWarningVO.WarningItem item = new EarlyWarningVO.WarningItem();
+            item.setName(gs.getName());
+            item.setTotalCount(gs.getTotalCount());
+            item.setFailCount(gs.getFailCount());
+            item.setFailRate(gs.getFailRate());
+            return item;
+        }).collect(Collectors.toList());
+    }
+
+    private String callEarlyWarningAgent(int hours) {
+        String url = SystemConstants.AGENT4J_URL + "/api/v1/early-warning";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, Object> body = Map.of("hours", hours);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+
+        log.info("触发预警分析 — 回溯 {} 小时", hours);
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+            if (response.getStatusCode() != HttpStatus.OK || !StringUtils.hasText(response.getBody())) {
+                return "[AI 服务异常]";
+            }
+            JsonNode root = objectMapper.readTree(response.getBody());
+            if (root.path("code").asInt(-1) != 200) {
+                return "[AI 服务错误: " + root.path("message").asText("未知") + "]";
+            }
+            String content = root.path("data").path("content").asText("");
+            return StringUtils.hasText(content) ? content : "[AI 未返回有效分析]";
+        } catch (Exception e) {
+            log.error("预警分析 Agent4j 调用失败", e);
+            return "[AI 服务不可用: " + e.getMessage() + "]";
+        }
     }
 }

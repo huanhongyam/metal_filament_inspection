@@ -58,6 +58,11 @@ public class DeviceController {
     public Result<Device> queryDeviceById(@PathVariable Long deviceId) {
         return Result.success(deviceService.getById(deviceId));
     }
+    /**
+     * 根据设备ID查询设备信息
+     * 权限：仅管理员用户（roleId=1）
+     */
+    @RequireAdmin
     @Operation(summary = "创建设备")
     @PostMapping
     public Result<Boolean> createDevice(@RequestBody Device device) {

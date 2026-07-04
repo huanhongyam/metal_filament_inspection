@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
 import com.kunpeng.metal_filament_inspection.domain.dto.*;
 import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
+import com.kunpeng.metal_filament_inspection.domain.vo.EarlyWarningVO;
 import com.kunpeng.metal_filament_inspection.domain.vo.WireInfoWithDetectionInfo;
 import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialPassRateVO;
 import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialVO;
@@ -198,6 +199,30 @@ public class WireMaterialController {
     public Result<WireMaterialUpdateDTO> triggerEvaluation(@PathVariable Long batchNumber) {
         log.info("管理员触发单条评估 — 批次号：{}", batchNumber);
         return wireMaterialService.triggerEvaluation(batchNumber);
+    }
+
+    /**
+     * 预警分析 — Agent 专用
+     * 返回按生产商/负责人/设备分组的不合格统计数据
+     */
+    @Operation(summary = "Agent 获取预警统计数据")
+    @GetMapping("/early-warning-stats")
+    public Result<EarlyWarningStatsDTO> getEarlyWarningStats(
+            @RequestParam(value = "hours", defaultValue = "24") Integer hours) {
+        return Result.success(wireMaterialService.getEarlyWarningStats(hours));
+    }
+
+    /**
+     * 预警分析 — AI 分析
+     * 权限：管理员（roleId=1）
+     */
+    @RequireAdmin
+    @Operation(summary = "触发 AI 预警分析")
+    @PostMapping("/early-warning")
+    public Result<EarlyWarningVO> triggerEarlyWarning(
+            @RequestParam(value = "hours", defaultValue = "24") Integer hours) {
+        log.info("管理员触发预警分析，回溯 {} 小时", hours);
+        return wireMaterialService.triggerEarlyWarning(hours);
     }
 
 }
