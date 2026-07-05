@@ -5,9 +5,10 @@ public class SystemConstants {
     public static final String WIRE_MATERIAL_PREFIX = "wireMaterial";
     public static final String DETECTION_BATCH_PREFIX = "detectionBatch";
     public static final String AGENT_TOKEN = "eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZ2VudCIsInVzZXJJZCI6MTAwLCJleHAiOjE3ODIyOTYwMTN9.Mpmsy1EUne2BpBZ02YIKoYgf3w6GP_N-uVRsIZky6wGEH8g9I1EVK-jYSHWka8qx";
-    public static final String HUAWEI_IOT_MESSAGE_PREFIX1 = "/notify_data/body/services/0/properties/1";
-    public static final String HUAWEI_IOT_MESSAGE_PREFIX2 = "/notify_data/body/services/0/properties/1/2";
+    public static final String HUAWEI_IOT_MESSAGE_PREFIX1 = "/notify_data/body/services/0/properties/wire";
+    public static final String HUAWEI_IOT_MESSAGE_PREFIX2 = "/notify_data/body/services/0/properties/wire/2";
     public static final String HUAWEI_IOT_MESSAGE_SURFACE_PREFIX = "/notify_data/body/services/0/properties/surface_data";
+    public static final String HUAWEI_IOT_MESSAGE_AGENT_PREFIX = "/notify_data/body/services/0/properties/question";
     public static final String RABBITMQ_EXCHANGE_DETECT_TASK = "detect.exchange";
     public static final String RABBITMQ_EXCHANGE_SENDDOWN_QUEUE = "senddown.queue";
     public static final String RABBITMQ_EXCHANGE_SENDDOWN_EXCHANGE = "senddown.exchange";
@@ -18,8 +19,6 @@ public class SystemConstants {
     public static final String DEFAULT_SENDDOWN_TOPIC = "default.task";
     public static final String HUAWEI_DEVICE_ID = "6a32861318855b39c5258e08_test";
     public static final String QUESTION_PREFIX = "question";
-    public static final String AGENT4J_URL = "http://localhost:8081";
-    public static final String HUAWEI_IOT_MESSAGE_AGENT_PREFIX = "/notify_data/body/services/0/properties/question";
     public static final String MAIL_SEND_CODE_KEY = "mail.send.code";
     public static final String MAIL_SEND_LOGIN_CODE_KEY = "mail.send.login.code";
     public static final String USER_REGISTER = "user.register";

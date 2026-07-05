@@ -127,20 +127,43 @@ public class IoTYOLOConsumer {
                     // 画矩形框
                     Imgproc.rectangle(annotatedImage, topLeft, bottomRight, color, 2);
 
-                    // 准备文字标签
+                    // 文字标签：上方有空间则放框外上方，否则放框内顶部
                     String label = String.format("%s %.2f", className, confidence);
-                    // 文字背景
+                    double fontSize = 0.5;
+                    int thickness = 1;
                     int[] baseline = new int[1];
-                    Size labelSize = Imgproc.getTextSize(label, Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, 1, baseline);
-                    Point labelOrigin = new Point(obj.x1, obj.y1 - labelSize.height);
-                    // 文字背景矩形
-                    Imgproc.rectangle(annotatedImage,
-                            new Point(obj.x1, obj.y1 - labelSize.height - baseline[0]),
-                            new Point(obj.x1 + labelSize.width, obj.y1),
-                            color, Imgproc.FILLED);
-                    // 写文字
-                    Imgproc.putText(annotatedImage, label, labelOrigin,
-                            Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar(255, 255, 255), 1);
+                    Size labelSize = Imgproc.getTextSize(label, Imgproc.FONT_HERSHEY_SIMPLEX, fontSize, thickness, baseline);
+                    int pad = 3;
+                    // 文字行高（含基线）
+                    int textH = (int) (labelSize.height + pad * 2);
+                    // 文字区域右边界，不超过图像宽度
+                    double textRight = Math.min(obj.x1 + labelSize.width + pad * 2, annotatedImage.cols());
+                    // 文字起始x
+                    double textX = obj.x1 + pad;
+
+                    if (obj.y1 > textH) {
+                        // 框上方空间够：文字背景挂在框上方
+                        Imgproc.rectangle(annotatedImage,
+                                new Point(obj.x1, obj.y1 - textH),
+                                new Point(textRight, obj.y1),
+                                color, Imgproc.FILLED);
+                        Imgproc.putText(annotatedImage, label,
+                                new Point(textX, obj.y1 - pad - baseline[0]),
+                                Imgproc.FONT_HERSHEY_SIMPLEX, fontSize,
+                                new Scalar(255, 255, 255), thickness);
+                    } else {
+                        // 框上方空间不够：文字背景放在框内顶部
+                        double innerBottom = obj.y1 + textH;
+                        if (innerBottom > obj.y2) innerBottom = obj.y2;
+                        Imgproc.rectangle(annotatedImage,
+                                new Point(obj.x1, obj.y1),
+                                new Point(textRight, innerBottom),
+                                color, Imgproc.FILLED);
+                        Imgproc.putText(annotatedImage, label,
+                                new Point(textX, innerBottom - pad - baseline[0]),
+                                Imgproc.FONT_HERSHEY_SIMPLEX, fontSize,
+                                new Scalar(255, 255, 255), thickness);
+                    }
                 }
 
                 // ====== 3. 将画好框的图片保存为临时文件 ======

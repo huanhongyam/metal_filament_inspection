@@ -37,11 +37,25 @@ public class IoTSendDownConsumer {
         Long batchNo = task.getBatchNo();
         Long rollNo = task.getRollNo();
         Long batchNumber = wireMaterialService.queryByBatchNoWithRollNo(batchNo, rollNo);
+        if (batchNumber == null) {
+            log.warn("⚠️ 未找到 batchNo={}, rollNo={} 对应的批次", batchNo, rollNo);
+            return;
+        }
         // 查询相应检测记录并调用聚合逻辑聚合消息下发华为云
         List<DetectionBatchDTO> detectionBatchDTOS = detectionBatchService.listFlawData(batchNumber);
         DetectionBatchSummaryDTO detectionBatchSummaryDTOS = DetectionSummary.summarizeByBatchLoop(detectionBatchDTOS);
-        DetectionBatchSummaryForIoTDTO detectionBatchSummaryForIoTDTO = BeanUtil.copyProperties(detectionBatchSummaryDTOS, DetectionBatchSummaryForIoTDTO.class);
-        detectionBatchSummaryForIoTDTO.setModelEvaluationResult(wireMaterialService.getById(batchNumber).getModelEvaluationResult().getDescription());
+        DetectionBatchSummaryForIoTDTO detectionBatchSummaryForIoTDTO;
+        if (detectionBatchSummaryDTOS == null) {
+            detectionBatchSummaryForIoTDTO = new DetectionBatchSummaryForIoTDTO();
+            log.info("📤 批次 {} 暂无检测数据，发送空汇总", batchNumber);
+        } else {
+            detectionBatchSummaryForIoTDTO = BeanUtil.copyProperties(detectionBatchSummaryDTOS, DetectionBatchSummaryForIoTDTO.class);
+        }
+        // 填充评估结果
+        var wireMaterial = wireMaterialService.getById(batchNumber);
+        if (wireMaterial != null && wireMaterial.getModelEvaluationResult() != null) {
+            detectionBatchSummaryForIoTDTO.setModelEvaluationResult(wireMaterial.getModelEvaluationResult().getDescription());
+        }
         // 下发消息
         huaWeiIoTSentDownUtil.sendDownMessage(SystemConstants.HUAWEI_DEVICE_ID,SystemConstants.HUAWEI_SENDDOWN_SURFACE_DATA_TOPIC,detectionBatchSummaryForIoTDTO);
     }

@@ -3,6 +3,7 @@ package com.kunpeng.metal_filament_inspection.domain.dto;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 public class DetectionBatchSummaryDTO {
@@ -39,7 +40,7 @@ public class DetectionBatchSummaryDTO {
      */
     private Integer scuffCount;
     /**
-     *  示例图片URL（取第一条）
+     * 缺陷图片URL列表（只存有缺陷的七牛云图片，默认图不存）
      */
-    private String imgUrl;
+    private List<String> imgUrls;
 }

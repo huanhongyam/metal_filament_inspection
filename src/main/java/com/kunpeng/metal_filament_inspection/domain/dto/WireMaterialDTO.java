@@ -53,7 +53,7 @@ public class WireMaterialDTO {
     /**
      * 生产设备
      */
-    private String manufacturer;
+    private String productionMachine;
 
     /**
      * 负责人
@@ -64,11 +64,6 @@ public class WireMaterialDTO {
      * 工艺类型
      */
     private String processType;
-
-    /**
-     * 生产机器
-     */
-    private String productionMachine;
 
     /**
      * 联系方式（邮箱）

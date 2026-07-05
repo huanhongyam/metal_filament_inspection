@@ -74,13 +74,13 @@ public class WireMaterialController {
             @RequestParam(value = "deviceId", required = false) String deviceId,
             @RequestParam(value = "scenarioCode", required = false) String scenarioCode,
             @RequestParam(value = "batchNo", required = false) Long batchNo,
-            @RequestParam(value = "manufacturer", required = false) String manufacturer,
+            @RequestParam(value = "productionMachine", required = false) String productionMachine,
             @RequestParam(value = "responsiblePerson", required = false) String responsiblePerson,
             @RequestParam(value = "modelEvaluationResult", required = false) String modelEvaluationResult,
             @RequestParam(value = "startDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(value = "endDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         return Result.success(wireMaterialService.listPageWithFilter(current, deviceId, scenarioCode,
-                batchNo, manufacturer, responsiblePerson, modelEvaluationResult, startDate, endDate));
+                batchNo, productionMachine, responsiblePerson, modelEvaluationResult, startDate, endDate));
     }
     /**
      * 查询线材条数

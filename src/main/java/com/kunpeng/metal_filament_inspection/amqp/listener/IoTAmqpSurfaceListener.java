@@ -2,7 +2,6 @@ package com.kunpeng.metal_filament_inspection.amqp.listener;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kunpeng.metal_filament_inspection.domain.dto.TaskDTO;
 import com.kunpeng.metal_filament_inspection.domain.dto.WireDTO;
 import com.kunpeng.metal_filament_inspection.utils.SystemConstants;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +22,7 @@ public class IoTAmqpSurfaceListener {
     }
 
     @JmsListener(
-            destination = "${huawei.iot.amqp.queue-name}",
+            destination = "${huawei.iot.amqp.queue-name-surface}",
             containerFactory = "iotAmqpListenerFactory"
     )
     public void onMessage(String message){
@@ -31,7 +30,7 @@ public class IoTAmqpSurfaceListener {
         try {
             payload = message;
             JsonNode root = objectMapper.readTree(payload);
-            // 定位到 services[0].properties."1"
+            // 定位到 services[0].properties.surface_data
             JsonNode dataNode1 = root.at(SystemConstants.HUAWEI_IOT_MESSAGE_SURFACE_PREFIX);
             if (!dataNode1.isMissingNode()) {
                 WireDTO wireDTO = objectMapper.convertValue(dataNode1, WireDTO.class);

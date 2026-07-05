@@ -8,7 +8,7 @@ import java.util.List;
 
 @Data
 public class EarlyWarningVO {
-    private List<WarningItem> topManufacturers;
+    private List<WarningItem> topProductionMachines;
     private List<WarningItem> topResponsiblePersons;
     private List<WarningItem> topDevices;
     private String aiAnalysis;

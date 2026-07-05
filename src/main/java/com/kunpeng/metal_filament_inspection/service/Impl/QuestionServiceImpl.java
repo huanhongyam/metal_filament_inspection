@@ -16,6 +16,7 @@ import com.kunpeng.metal_filament_inspection.utils.SystemConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -45,6 +46,9 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Value("${agent4j.url}")
+    private String agent4jUrl;
 
     @Autowired
     private Executor streamExecutor;
@@ -147,7 +151,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
     }
 
     private String callAgent4j(String questionContent) {
-        String url = SystemConstants.AGENT4J_URL + "/api/v1/chat";
+        String url = agent4jUrl + "/api/v1/chat";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -209,7 +213,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         CompletableFuture.runAsync(() -> {
             StringBuilder fullResponse = new StringBuilder();
             try {
-                String url = SystemConstants.AGENT4J_URL + "/api/v1/chat/stream";
+                String url = agent4jUrl + "/api/v1/chat/stream";
 
                 Map<String, Object> body = Map.of(
                         "message", dto.getQuestionContent(),

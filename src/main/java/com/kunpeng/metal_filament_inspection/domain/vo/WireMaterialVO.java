@@ -39,7 +39,7 @@ public class WireMaterialVO {
     /**
      * 生产设备
      */
-    private String manufacturer;
+    private String productionMachine;
 
     /**
      * 负责人

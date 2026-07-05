@@ -57,11 +57,6 @@ public class WireMaterial implements Serializable {
     private String sourceOriginRaw;
     
     /**
-     * 生产设备
-     */
-    private String manufacturer;
-    
-    /**
      * 负责人
      */
     private String responsiblePerson;
