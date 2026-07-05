@@ -25,7 +25,7 @@ public class HuaweiAmqpConfig {
 
     @Bean(name = "huaweiJmsConnectionFactory")
     public ConnectionFactory huaweiJmsConnectionFactory() throws Exception {
-        String remoteUrl = String.format("%s:%d?amqp.vhost=%s&amqp.idleTimeout=8000&amqp.saslMechanisms=PLAIN",
+        String remoteUrl = String.format("%s:%d?amqp.vhost=%s&amqp.idleTimeout=60000&amqp.saslMechanisms=PLAIN",
                 options.getHost(), options.getPort(), options.getInstanceId());
 
         JmsConnectionFactory factory = new JmsConnectionFactory(remoteUrl);

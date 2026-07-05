@@ -3,6 +3,7 @@ package com.kunpeng.metal_filament_inspection.utils;
 import com.kunpeng.metal_filament_inspection.domain.dto.DetectionBatchDTO;
 import com.kunpeng.metal_filament_inspection.domain.dto.DetectionBatchSummaryDTO;
 import java.util.*;
+import static com.kunpeng.metal_filament_inspection.utils.SystemConstants.DEFAULT_QINIU_URL;
 
 /**
  * 检测数据聚合工具类
@@ -29,7 +30,7 @@ public class DetectionSummary {
                 summary.setBatchNumber(batchNumber);
                 summary.setTotalImages(dto.getTotalImages());          // 总图片数（取第一条）
                 summary.setAvgConfidence(dto.getAvgConfidence());      // 平均置信度（取第一条）
-                summary.setImgUrl(dto.getImgUrl());                    // 示例图片URL（取第一条）
+                summary.setImgUrls(new ArrayList<>());                  // 缺陷图片URL列表（七牛云，默认图不存）
                 summary.setScratchCount(dto.getScratchCount());        // 划痕总数（累加）
                 summary.setBlockDefectCount(dto.getBlockDefectCount()); // 块状缺陷总数（累加）
                 summary.setClusterDefectCount(dto.getClusterDefectCount()); // 簇状缺陷总数（累加）
@@ -43,6 +44,12 @@ public class DetectionSummary {
                 summary.setClusterDefectCount(summary.getClusterDefectCount() + dto.getClusterDefectCount());
                 summary.setMetalBurrCount(summary.getMetalBurrCount() + dto.getMetalBurrCount());
                 summary.setScuffCount(summary.getScuffCount() + dto.getScuffCount());
+            }
+            // 收集有缺陷的七牛云图片，默认图片不入列表
+            if (dto.getImgUrl() != null
+                    && !DEFAULT_QINIU_URL.equals(dto.getImgUrl())
+                    && !summary.getImgUrls().contains(dto.getImgUrl())) {
+                summary.getImgUrls().add(dto.getImgUrl());
             }
         }
 

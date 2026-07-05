@@ -8,6 +8,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -29,6 +30,10 @@ public class WireInfoWithDetectionInfo {
     private Integer clusterDefectCount;
     private Integer metalBurrCount;
     private Integer scuffCount;
+    /**
+     * 缺陷图片URL列表（仅七牛云，不含默认图）
+     */
+    private List<String> imgUrls;
     /**
      * 评估结果
      */
@@ -61,7 +66,7 @@ public class WireInfoWithDetectionInfo {
     /**
      * 生产设备
      */
-    private String manufacturer;
+    private String productionMachine;
 
     /**
      * 负责人

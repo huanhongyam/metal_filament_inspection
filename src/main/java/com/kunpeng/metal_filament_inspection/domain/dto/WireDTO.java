@@ -2,8 +2,11 @@ package com.kunpeng.metal_filament_inspection.domain.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-@AllArgsConstructor
+import lombok.NoArgsConstructor;
+
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class WireDTO {
 
     private Long batchNo;

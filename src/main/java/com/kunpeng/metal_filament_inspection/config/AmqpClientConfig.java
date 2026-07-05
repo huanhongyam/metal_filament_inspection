@@ -23,7 +23,9 @@ public class AmqpClientConfig {
     private String accessCode;
 
     @NotBlank(message = "队列名称不能为空")
-    private String queueName;
+    private String queueNameAdd;
+    private String queueNameSurface;
+    private String queueNameQuestion;
 
     private String instanceId = "default";
 

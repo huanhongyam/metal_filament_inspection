@@ -26,14 +26,13 @@ public class IoTAmqpQuestionListener {
     }
 
     @JmsListener(
-            destination = "${huawei.iot.amqp.queue-name}",
+            destination = "${huawei.iot.amqp.queue-name-question}",
             containerFactory = "iotAmqpListenerFactory"
     )
     public void onMessage(String message) {
         try {
             JsonNode root = objectMapper.readTree(message);
-            String questionPrefix = SystemConstants.HUAWEI_IOT_MESSAGE_AGENT_PREFIX;
-            JsonNode questionNode = root.at(questionPrefix);
+            JsonNode questionNode = root.at(SystemConstants.HUAWEI_IOT_MESSAGE_AGENT_PREFIX);
 
             if (questionNode.isMissingNode()) {
                 return;

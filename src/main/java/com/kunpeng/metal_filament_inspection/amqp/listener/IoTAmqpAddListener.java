@@ -29,7 +29,7 @@ public class IoTAmqpAddListener {
         this.idWorker = idWorker;
     }
     @JmsListener(
-            destination = "${huawei.iot.amqp.queue-name}",
+            destination = "${huawei.iot.amqp.queue-name-add}",
             containerFactory = "iotAmqpListenerFactory"
     )
     public void onMessage(String message){
@@ -37,7 +37,7 @@ public class IoTAmqpAddListener {
         try {
             payload = message;
             JsonNode root = objectMapper.readTree(payload);
-            // 定位到 services[0].properties."1"
+            // 定位到 services[0].properties.wire
             JsonNode dataNode1 = root.at(SystemConstants.HUAWEI_IOT_MESSAGE_PREFIX1);
             Long batchNumber = idWorker.generateId(SystemConstants.WIRE_MATERIAL_PREFIX);
             if (!dataNode1.isMissingNode()) {
@@ -53,10 +53,10 @@ public class IoTAmqpAddListener {
                 }
                 wireMaterialService.saveWireMaterial(dto);
                 // 异步发送检测任务
-                // 定位到 services[0].properties."2"
+                // 定位到 services[0].properties.wire.2
                 JsonNode dataNode2 = root.at(SystemConstants.HUAWEI_IOT_MESSAGE_PREFIX2);
                 if (dataNode2.isMissingNode()) {
-                    log.info("未找到 properties.2，不触发检测任务");
+                    log.info("未找到任务时间节点，不触发检测任务");
                     return;
                 }
                     TaskDTO taskDTO = objectMapper.convertValue(dataNode2, TaskDTO.class);
@@ -68,7 +68,7 @@ public class IoTAmqpAddListener {
                             SystemConstants.RABBITMQ_TASK_TRIGGER_EVALUATION,batchNumber);
                     log.info("📤 检测任务已发送至 detect.task, batchNumber={}", batchNumber);
             } else {
-                log.warn("未找到 properties.1 节点");
+                log.warn("未找到 wire 属性节点");
             }
         } catch (Exception e) {
             log.error("[IOT]:消息解析失败{}",payload,e);

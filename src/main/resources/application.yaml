@@ -73,7 +73,9 @@ huawei:
       port: 5671
       access-key: "fjbhveXV"
       access-code: "xRkCW3g6ZUJ4zDiL8CeAfnSislpvy86M"
-      queue-name: "DefaultQueue"
+      queue-name-add: "mq.inspection.data.raw"
+      queue-name-surface: "mq.inspection.surface_data"
+      queue-name-question: "mq.inspection.question"
       client-id: "backend-${random.uuid}" # 客户端唯一标识
       auto-acknowledge: true
     app:
@@ -97,5 +99,7 @@ qiniu:
   region: "guangdong"
   expire-seconds: 3600
   use-https: false
+agent4j:
+  url: http://localhost:8081
 opencv:
   library-path: "D:/opencv/build/java/x64/opencv_java4120.dll"

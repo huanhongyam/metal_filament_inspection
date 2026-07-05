@@ -25,6 +25,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -56,6 +57,10 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
     private RestTemplate restTemplate;
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Value("${agent4j.url}")
+    private String agent4jUrl;
+
     @Resource
     private WireMaterialStats wireMaterialStats;
     @Override
@@ -65,8 +70,8 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         if (StringUtils.hasText(queryDTO.getDeviceId())) {
             wrapper.eq(WireMaterial::getDeviceId, queryDTO.getDeviceId());
         }
-        if (StringUtils.hasText(queryDTO.getManufacturer())) {
-            wrapper.eq(WireMaterial::getManufacturer, queryDTO.getManufacturer());
+        if (StringUtils.hasText(queryDTO.getProductionMachine())) {
+            wrapper.eq(WireMaterial::getProductionMachine, queryDTO.getProductionMachine());
         }
         if (StringUtils.hasText(queryDTO.getResponsiblePerson())) {
             wrapper.eq(WireMaterial::getResponsiblePerson, queryDTO.getResponsiblePerson());
@@ -144,7 +149,7 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
 
     @Override
     public PageDTO<WireMaterialVO> listPageWithFilter(Integer current, String deviceId, String scenarioCode,
-                                                       Long batchNo, String manufacturer, String responsiblePerson,
+                                                       Long batchNo, String productionMachine, String responsiblePerson,
                                                        String modelEvaluationResult, LocalDate startDate, LocalDate endDate) {
         Page<WireMaterial> page = new Page<>(current, SystemConstants.DEFAULT_PAGE_SIZE);
         LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
@@ -158,8 +163,8 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         if (batchNo != null) {
             wrapper.eq(WireMaterial::getBatchNo, batchNo);
         }
-        if (StringUtils.hasText(manufacturer)) {
-            wrapper.eq(WireMaterial::getManufacturer, manufacturer);
+        if (StringUtils.hasText(productionMachine)) {
+            wrapper.eq(WireMaterial::getProductionMachine, productionMachine);
         }
         if (StringUtils.hasText(responsiblePerson)) {
             wrapper.eq(WireMaterial::getResponsiblePerson, responsiblePerson);
@@ -388,7 +393,7 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
                 .resistance(wireMaterial.getResistance())
                 .extensibility(wireMaterial.getExtensibility())
                 .weight(wireMaterial.getWeight())
-                .manufacturer(wireMaterial.getManufacturer())
+                .productionMachine(wireMaterial.getProductionMachine())
                 .responsiblePerson(wireMaterial.getResponsiblePerson())
                 .processType(wireMaterial.getProcessType())
                 .scenarioCode(wireMaterial.getScenarioCode())
@@ -407,7 +412,8 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
                     .blockDefectCount(summary.getBlockDefectCount())
                     .clusterDefectCount(summary.getClusterDefectCount())
                     .metalBurrCount(summary.getMetalBurrCount())
-                    .scuffCount(summary.getScuffCount());
+                    .scuffCount(summary.getScuffCount())
+                    .imgUrls(summary.getImgUrls());
         }
 
         return Result.success(builder.build());
@@ -422,7 +428,7 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         }
 
         // 2. 调用 Python Agent4j 评估
-        String url = SystemConstants.AGENT4J_URL + "/api/v1/evaluate/single";
+        String url = agent4jUrl + "/api/v1/evaluate/single";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<WireMaterial> request = new HttpEntity<>(wm, headers);
@@ -477,7 +483,7 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         LocalDateTime since = LocalDateTime.now().minusHours(hours);
 
         LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
-        wrapper.select(WireMaterial::getManufacturer, WireMaterial::getResponsiblePerson,
+        wrapper.select(WireMaterial::getProductionMachine, WireMaterial::getResponsiblePerson,
                         WireMaterial::getDeviceId, WireMaterial::getModelEvaluationResult)
                 .ge(WireMaterial::getCreateTime, since);
         List<WireMaterial> records = list(wrapper);
@@ -497,7 +503,7 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         dto.setTotalCount(total);
         dto.setFailCount((int) failTotal);
         dto.setOverallFailRate(overallRate);
-        dto.setByManufacturer(aggregateByField(records, "manufacturer"));
+        dto.setByProductionMachine(aggregateByField(records, "productionMachine"));
         dto.setByResponsiblePerson(aggregateByField(records, "responsiblePerson"));
         dto.setByDevice(aggregateByField(records, "deviceId"));
         return dto;
@@ -507,7 +513,7 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         Map<String, long[]> map = new LinkedHashMap<>();
         for (WireMaterial r : records) {
             String key = switch (field) {
-                case "manufacturer" -> r.getManufacturer();
+                case "productionMachine" -> r.getProductionMachine();
                 case "responsiblePerson" -> r.getResponsiblePerson();
                 case "deviceId" -> r.getDeviceId();
                 default -> null;
@@ -543,7 +549,7 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
 
         // 1. 本地聚合 stats → 构建结构化 top 3
         EarlyWarningStatsDTO stats = getEarlyWarningStats(hours);
-        List<EarlyWarningVO.WarningItem> topManufacturers = buildTop3(stats.getByManufacturer());
+        List<EarlyWarningVO.WarningItem> topProductionMachines = buildTop3(stats.getByProductionMachine());
         List<EarlyWarningVO.WarningItem> topResponsiblePersons = buildTop3(stats.getByResponsiblePerson());
         List<EarlyWarningVO.WarningItem> topDevices = buildTop3(stats.getByDevice());
 
@@ -552,7 +558,7 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
 
         // 3. 组装 VO
         EarlyWarningVO vo = new EarlyWarningVO();
-        vo.setTopManufacturers(topManufacturers);
+        vo.setTopProductionMachines(topProductionMachines);
         vo.setTopResponsiblePersons(topResponsiblePersons);
         vo.setTopDevices(topDevices);
         vo.setAiAnalysis(aiAnalysis);
@@ -605,7 +611,19 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
 
     @Override
     public List<WireMaterialPhysicalVO> QueryWithBatchNo(Long batchNo) {
-        List<WireMaterial> rollList = query().eq("batch_no", batchNo).list().stream().limit(10).toList();
+        if(batchNo==null){
+            LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
+            wrapper.orderByDesc(WireMaterial::getCreateTime)
+                    .last("LIMIT 1");
+            WireMaterial wireMaterial = baseMapper.selectOne(wrapper);
+            Long batchNo1 = wireMaterial.getBatchNo();
+            List<WireMaterial> rollList = query().eq("batch_no", batchNo1).list().stream().limit(10).toList();
+            List<WireMaterialPhysicalVO> wireMaterialPhysicalVOS = rollList.stream().map(item -> {
+                return BeanUtil.copyProperties(item, WireMaterialPhysicalVO.class);
+            }).collect(Collectors.toList());
+            return wireMaterialPhysicalVOS;
+        }
+        List<WireMaterial> rollList = query().eq("batch_no", batchNo).list().stream().toList();
         List<WireMaterialPhysicalVO> wireMaterialPhysicalVOS = rollList.stream().map(item -> {
             return BeanUtil.copyProperties(item, WireMaterialPhysicalVO.class);
         }).collect(Collectors.toList());
@@ -625,7 +643,7 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
     }
 
     private String callEarlyWarningAgent(int hours) {
-        String url = SystemConstants.AGENT4J_URL + "/api/v1/early-warning";
+        String url = agent4jUrl + "/api/v1/early-warning";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 

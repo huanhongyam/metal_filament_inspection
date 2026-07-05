@@ -25,7 +25,7 @@ public interface IWireMaterialService extends IService<WireMaterial> {
     PageDTO listPage(Integer current);
 
     PageDTO listPageWithFilter(Integer current, String deviceId, String scenarioCode, Long batchNo,
-                                String manufacturer, String responsiblePerson, String modelEvaluationResult,
+                                String productionMachine, String responsiblePerson, String modelEvaluationResult,
                                 LocalDate startDate, LocalDate endDate);
 
     Result<Boolean> saveWireMaterial(WireMaterialSaveDTO wireMaterialSaveDTO);

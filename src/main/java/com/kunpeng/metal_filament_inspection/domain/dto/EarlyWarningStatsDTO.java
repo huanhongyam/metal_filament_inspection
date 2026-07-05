@@ -11,7 +11,7 @@ public class EarlyWarningStatsDTO {
     private int totalCount;
     private int failCount;
     private BigDecimal overallFailRate;
-    private List<GroupStats> byManufacturer;
+    private List<GroupStats> byProductionMachine;
     private List<GroupStats> byResponsiblePerson;
     private List<GroupStats> byDevice;
 
