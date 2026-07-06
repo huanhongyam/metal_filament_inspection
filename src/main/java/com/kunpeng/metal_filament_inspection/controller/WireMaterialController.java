@@ -1,6 +1,8 @@
 package com.kunpeng.metal_filament_inspection.controller;
 
 import cn.hutool.core.bean.BeanUtil;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kunpeng.metal_filament_inspection.annotation.RequireAdmin;
 import com.kunpeng.metal_filament_inspection.domain.dto.*;
 import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
@@ -44,9 +46,18 @@ public class WireMaterialController {
      * 权限：已认证用户
      */
     @Operation(summary = "根据批次查询平均数据")
-    @GetMapping("/list-batchNoAvg")
+    @GetMapping("/batchNoAvg")
     public Result<WireMaterialPhysicalVO> QueryWithBatchNoAvg(@RequestParam(required = false) Long batchNo) {
         return Result.success(wireMaterialService.QueryWithBatchNoAvg(batchNo));
+    }
+    /**
+     * 分页查询最近记录平均数据
+     * 权限：已认证用户
+     */
+    @Operation(summary = "分页查询最近记录平均数据")
+    @GetMapping("/list-batchNoAvg")
+    public Result<Page<WireMaterialPhysicalVO>> QueryListWithBatchNoAvg(@RequestParam(value = "current", defaultValue = "1") Integer current) throws JsonProcessingException {
+        return wireMaterialService.QueryListWithBatchNoAvg(current);
     }
     /**
      * 根据批次查询数据

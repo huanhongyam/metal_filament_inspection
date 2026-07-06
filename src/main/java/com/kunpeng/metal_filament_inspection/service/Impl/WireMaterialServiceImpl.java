@@ -2,6 +2,8 @@ package com.kunpeng.metal_filament_inspection.service.Impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.stream.CollectorUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -9,6 +11,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.conditions.query.QueryChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kunpeng.metal_filament_inspection.domain.dto.*;import com.kunpeng.metal_filament_inspection.domain.entity.DetectionBatch;
 import com.kunpeng.metal_filament_inspection.domain.entity.User;
 import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
@@ -17,15 +20,13 @@ import com.kunpeng.metal_filament_inspection.mapper.DetectionBatchMapper;
 import com.kunpeng.metal_filament_inspection.mapper.WireMaterialMapper;
 import com.kunpeng.metal_filament_inspection.service.IUserService;
 import com.kunpeng.metal_filament_inspection.service.IWireMaterialService;
-import com.kunpeng.metal_filament_inspection.utils.DetectionSummary;
-import com.kunpeng.metal_filament_inspection.utils.SystemConstants;
-import com.kunpeng.metal_filament_inspection.utils.UserHolder;
-import com.kunpeng.metal_filament_inspection.utils.WireMaterialStats;
+import com.kunpeng.metal_filament_inspection.utils.*;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -41,6 +42,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -57,6 +59,8 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
     private RestTemplate restTemplate;
     @Autowired
     private ObjectMapper objectMapper;
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
     @Value("${agent4j.url}")
     private String agent4jUrl;
@@ -628,6 +632,60 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
             return BeanUtil.copyProperties(item, WireMaterialPhysicalVO.class);
         }).collect(Collectors.toList());
         return wireMaterialPhysicalVOS;
+    }
+
+    @Override
+    public Result<Page<WireMaterialPhysicalVO>> QueryListWithBatchNoAvg(Integer current) throws JsonProcessingException {
+        String cachePage = stringRedisTemplate.opsForValue().get(CacheKeyConstant.CACHE_LIST_WITH_BATCH_AVG);
+        if (StrUtil.isNotBlank(cachePage)) {
+            Page<WireMaterialPhysicalVO> cache = objectMapper.readValue(
+                    cachePage,
+                    objectMapper.getTypeFactory().constructParametricType(Page.class, WireMaterialPhysicalVO.class)
+            );
+            return Result.success(cache);
+        }
+        if (cachePage != null){
+            return Result.error("没有记录");
+        }
+
+        Page<WireMaterial> page = new Page<>(current, SystemConstants.DEFAULT_PAGE_SIZE);
+        LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(WireMaterial::getBatchNo)
+                .groupBy(WireMaterial::getBatchNo)
+                .last("ORDER BY MAX(create_time) DESC");
+        List<WireMaterial> wireMaterials = baseMapper.selectList(page, wrapper);
+        List<WireMaterialPhysicalVO> wireMaterialPhysicalVOS = new ArrayList<>();
+        for (WireMaterial wm : wireMaterials) {
+            Long batchNo = wm.getBatchNo();
+            List<WireMaterial> rollList = query().eq("batch_no", batchNo).list();
+            WireMaterialStats stats = new WireMaterialStats();
+            rollList.forEach(stats::accept);
+            String scenarioCode = rollList.isEmpty() ? null : rollList.get(0).getScenarioCode();
+            wireMaterialPhysicalVOS.add(WireMaterialPhysicalVO.builder()
+                    .batchNo(batchNo)
+                    .diameter(stats.getAvgDiameter())
+                    .weight(stats.getAvgWeight())
+                    .resistance(stats.getAvgResistance())
+                    .extensibility(stats.getAvgExtensibility())
+                    .scenarioCode(scenarioCode)
+                    .build());
+        }
+        Page<WireMaterialPhysicalVO> pageResult = new Page<>(current, SystemConstants.DEFAULT_PAGE_SIZE);
+        pageResult.setRecords(wireMaterialPhysicalVOS);
+        pageResult.setTotal(page.getTotal());
+        pageResult.setPages(page.getPages());
+        // 若数据库中也没有数据则返回fail
+        if (pageResult.getRecords()==null || pageResult.getRecords().isEmpty()) {
+            stringRedisTemplate.opsForValue().set(
+                    CacheKeyConstant.CACHE_LIST_WITH_BATCH_AVG,
+                    "",CacheKeyConstant.CACHE_TTL,
+                    TimeUnit.MINUTES);
+            return Result.error("没有记录");
+        }
+        stringRedisTemplate.opsForValue().set(
+                CacheKeyConstant.CACHE_LIST_WITH_BATCH_AVG,
+                JSONUtil.toJsonStr(pageResult),CacheKeyConstant.CACHE_TTL, TimeUnit.MINUTES);
+        return Result.success(pageResult);
     }
 
     private List<EarlyWarningVO.WarningItem> buildTop3(List<EarlyWarningStatsDTO.GroupStats> list) {
