@@ -23,6 +23,8 @@ import com.kunpeng.metal_filament_inspection.service.IWireMaterialService;
 import com.kunpeng.metal_filament_inspection.utils.*;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -61,6 +63,8 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
     private ObjectMapper objectMapper;
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+    @Autowired
+    private RedissonClient redissonClient;
 
     @Value("${agent4j.url}")
     private String agent4jUrl;
@@ -636,7 +640,8 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
 
     @Override
     public Result<Page<WireMaterialPhysicalVO>> QueryListWithBatchNoAvg(Integer current) throws JsonProcessingException {
-        String cachePage = stringRedisTemplate.opsForValue().get(CacheKeyConstant.CACHE_LIST_WITH_BATCH_AVG);
+        String cacheKey = CacheKeyConstant.CACHE_LIST_WITH_BATCH_AVG+current;
+        String cachePage = stringRedisTemplate.opsForValue().get(cacheKey);
         if (StrUtil.isNotBlank(cachePage)) {
             Page<WireMaterialPhysicalVO> cache = objectMapper.readValue(
                     cachePage,
@@ -644,48 +649,75 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
             );
             return Result.success(cache);
         }
-        if (cachePage != null){
+        if ("".equals(cachePage)){
             return Result.error("没有记录");
         }
 
-        Page<WireMaterial> page = new Page<>(current, SystemConstants.DEFAULT_PAGE_SIZE);
-        LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
-        wrapper.select(WireMaterial::getBatchNo)
-                .groupBy(WireMaterial::getBatchNo)
-                .last("ORDER BY MAX(create_time) DESC");
-        List<WireMaterial> wireMaterials = baseMapper.selectList(page, wrapper);
-        List<WireMaterialPhysicalVO> wireMaterialPhysicalVOS = new ArrayList<>();
-        for (WireMaterial wm : wireMaterials) {
-            Long batchNo = wm.getBatchNo();
-            List<WireMaterial> rollList = query().eq("batch_no", batchNo).list();
-            WireMaterialStats stats = new WireMaterialStats();
-            rollList.forEach(stats::accept);
-            String scenarioCode = rollList.isEmpty() ? null : rollList.get(0).getScenarioCode();
-            wireMaterialPhysicalVOS.add(WireMaterialPhysicalVO.builder()
-                    .batchNo(batchNo)
-                    .diameter(stats.getAvgDiameter())
-                    .weight(stats.getAvgWeight())
-                    .resistance(stats.getAvgResistance())
-                    .extensibility(stats.getAvgExtensibility())
-                    .scenarioCode(scenarioCode)
-                    .build());
+        // 防止缓存击穿
+        RLock lock = redissonClient.getLock("lock:" + cacheKey);
+        if (lock.tryLock()) {
+            try {
+                // 双检：锁内再查一次缓存
+                cachePage = stringRedisTemplate.opsForValue().get(cacheKey);
+                if (StrUtil.isNotBlank(cachePage)) {
+                    Page<WireMaterialPhysicalVO> cache = objectMapper.readValue(cachePage,
+                            objectMapper.getTypeFactory().constructParametricType(Page.class,
+                                    WireMaterialPhysicalVO.class));
+                    return Result.success(cache);
+                }
+
+                // 查库
+                Page<WireMaterial> page = new Page<>(current, 9);
+                LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
+                wrapper.select(WireMaterial::getBatchNo)
+                        .groupBy(WireMaterial::getBatchNo)
+                        .last("ORDER BY MAX(create_time) DESC");
+                List<WireMaterial> wireMaterials = baseMapper.selectList(page, wrapper);
+                List<WireMaterialPhysicalVO> vos = new ArrayList<>();
+                for (WireMaterial wm : wireMaterials) {
+                    Long batchNo = wm.getBatchNo();
+                    List<WireMaterial> rollList = query().eq("batch_no", batchNo).list();
+                    WireMaterialStats stats = new WireMaterialStats();
+                    rollList.forEach(stats::accept);
+                    String scenarioCode = rollList.isEmpty() ? null : rollList.get(0).getScenarioCode();
+                    vos.add(WireMaterialPhysicalVO.builder()
+                            .batchNo(batchNo)
+                            .diameter(stats.getAvgDiameter())
+                            .weight(stats.getAvgWeight())
+                            .resistance(stats.getAvgResistance())
+                            .extensibility(stats.getAvgExtensibility())
+                            .scenarioCode(scenarioCode)
+                            .build());
+                }
+                Page<WireMaterialPhysicalVO> pageResult = new Page<>(current, 9);
+                pageResult.setRecords(vos);
+                pageResult.setTotal(page.getTotal());
+                pageResult.setPages(page.getPages());
+
+                // 写缓存
+                // 缓存穿透处理
+                if (vos.isEmpty()) {
+                    stringRedisTemplate.opsForValue().set(cacheKey, "", CacheKeyConstant.CACHE_TTL, TimeUnit.MINUTES);
+                    return Result.error("没有记录");
+                }
+                // 缓存
+                stringRedisTemplate.opsForValue().set(cacheKey, JSONUtil.toJsonStr(pageResult),
+                        CacheKeyConstant.CACHE_TTL, TimeUnit.MINUTES);
+                return Result.success(pageResult);
+            } finally {
+                lock.unlock();
+            }
         }
-        Page<WireMaterialPhysicalVO> pageResult = new Page<>(current, SystemConstants.DEFAULT_PAGE_SIZE);
-        pageResult.setRecords(wireMaterialPhysicalVOS);
-        pageResult.setTotal(page.getTotal());
-        pageResult.setPages(page.getPages());
-        // 若数据库中也没有数据则返回fail
-        if (pageResult.getRecords()==null || pageResult.getRecords().isEmpty()) {
-            stringRedisTemplate.opsForValue().set(
-                    CacheKeyConstant.CACHE_LIST_WITH_BATCH_AVG,
-                    "",CacheKeyConstant.CACHE_TTL,
-                    TimeUnit.MINUTES);
-            return Result.error("没有记录");
+
+        // ===== 没拿到锁，等一等再读缓存 =====
+        try { Thread.sleep(200); } catch (InterruptedException ignored) {}
+        cachePage = stringRedisTemplate.opsForValue().get(cacheKey);
+        if (StrUtil.isNotBlank(cachePage)) {
+            Page<WireMaterialPhysicalVO> cache = objectMapper.readValue(cachePage,
+                    objectMapper.getTypeFactory().constructParametricType(Page.class, WireMaterialPhysicalVO.class));
+            return Result.success(cache);
         }
-        stringRedisTemplate.opsForValue().set(
-                CacheKeyConstant.CACHE_LIST_WITH_BATCH_AVG,
-                JSONUtil.toJsonStr(pageResult),CacheKeyConstant.CACHE_TTL, TimeUnit.MINUTES);
-        return Result.success(pageResult);
+        return Result.error("系统繁忙，请稍后重试");
     }
 
     private List<EarlyWarningVO.WarningItem> buildTop3(List<EarlyWarningStatsDTO.GroupStats> list) {
