@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WireMaterialPhysicalVO {
+public class WireMaterialPhysicalListVO {
     /**
      * 批次
      */
@@ -35,8 +35,4 @@ public class WireMaterialPhysicalVO {
      * 重量
      */
     private BigDecimal weight;
-    /**
-     * 应用场景编号
-     */
-    private String scenarioCode;
 }

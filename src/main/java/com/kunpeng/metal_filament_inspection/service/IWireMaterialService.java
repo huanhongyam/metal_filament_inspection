@@ -1,12 +1,11 @@
 package com.kunpeng.metal_filament_inspection.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kunpeng.metal_filament_inspection.domain.dto.*;
 import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
-import com.kunpeng.metal_filament_inspection.domain.vo.EarlyWarningVO;
-import com.kunpeng.metal_filament_inspection.domain.vo.WireInfoWithDetectionInfo;
-import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialPassRateVO;
-import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialPhysicalVO;
+import com.kunpeng.metal_filament_inspection.domain.vo.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
@@ -53,4 +52,6 @@ public interface IWireMaterialService extends IService<WireMaterial> {
     WireMaterialPhysicalVO QueryWithBatchNoAvg(Long batchNo);
 
     List<WireMaterialPhysicalVO> QueryWithBatchNo(Long batchNo);
+
+    Result<Page<WireMaterialPhysicalVO>> QueryListWithBatchNoAvg(Integer current) throws JsonProcessingException;
 }
