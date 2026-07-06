@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -19,6 +20,7 @@ import java.util.List;
 
 @Tag(name = "AI 智能问答")
 @Slf4j
+@Transactional
 @RestController
 @RequestMapping("/api/question")
 public class QuestionController {

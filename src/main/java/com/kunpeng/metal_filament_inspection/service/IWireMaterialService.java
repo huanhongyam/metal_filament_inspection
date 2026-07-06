@@ -47,7 +47,7 @@ public interface IWireMaterialService extends IService<WireMaterial> {
 
     EarlyWarningStatsDTO getEarlyWarningStats(Integer hours);
 
-    Result<EarlyWarningVO> triggerEarlyWarning(Integer hours);
+    Result<EarlyWarningVO> triggerEarlyWarning(Integer hours,Integer status) throws JsonProcessingException;
 
     WireMaterialPhysicalVO QueryWithBatchNoAvg(Long batchNo);
 
