@@ -5,13 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kunpeng.metal_filament_inspection.domain.dto.TaskDTO;
 import com.kunpeng.metal_filament_inspection.domain.dto.WireMaterialSaveDTO;
 import com.kunpeng.metal_filament_inspection.service.IWireMaterialService;
+import com.kunpeng.metal_filament_inspection.utils.CacheKeyConstant;
 import com.kunpeng.metal_filament_inspection.utils.IdWorker;
 import com.kunpeng.metal_filament_inspection.utils.SystemConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Component
@@ -21,6 +24,8 @@ public class IoTAmqpAddListener {
     private final IdWorker idWorker;
     @Autowired
     private RabbitTemplate rabbitTemplate;
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
 
     public IoTAmqpAddListener(ObjectMapper objectMapper, IWireMaterialService wireMaterialService, IdWorker idWorker) {
@@ -28,6 +33,7 @@ public class IoTAmqpAddListener {
         this.wireMaterialService = wireMaterialService;
         this.idWorker = idWorker;
     }
+    @Transactional
     @JmsListener(
             destination = "${huawei.iot.amqp.queue-name-add}",
             containerFactory = "iotAmqpListenerFactory"
@@ -52,6 +58,8 @@ public class IoTAmqpAddListener {
                     return;
                 }
                 wireMaterialService.saveWireMaterial(dto);
+                stringRedisTemplate.delete(CacheKeyConstant.CACHE_LIST_WITH_BATCH_AVG+1);
+                stringRedisTemplate.delete(CacheKeyConstant.CACHE_LIST_WITH_BATCH_AVG+2);
                 // 异步发送检测任务
                 // 定位到 services[0].properties.wire.2
                 JsonNode dataNode2 = root.at(SystemConstants.HUAWEI_IOT_MESSAGE_PREFIX2);
