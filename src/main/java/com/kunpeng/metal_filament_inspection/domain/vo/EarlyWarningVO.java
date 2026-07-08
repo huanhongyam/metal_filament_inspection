@@ -3,6 +3,7 @@ package com.kunpeng.metal_filament_inspection.domain.vo;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -12,7 +13,7 @@ public class EarlyWarningVO {
     private List<WarningItem> topResponsiblePersons;
     private List<WarningItem> topDevices;
     private String aiAnalysis;
-    private LocalDateTime analysisTime;
+    private Instant analysisTime;
 
     @Data
     public static class WarningItem {

@@ -14,4 +14,8 @@ public interface IUserService extends IService<User> {
     Result<Boolean> registerUserByEmail(UserRegisterDTO user, String code);
 
     Result<String> loginWithEmail(String email, String code);
+
+    Result<Boolean> updatePassWordWithCode(String password,String email,String code);
+
+    Result<Boolean> updatePassWord(String oldPassWord, String newPassWord);
 }

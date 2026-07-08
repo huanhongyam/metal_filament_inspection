@@ -29,6 +29,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/user/email",
                         "/api/user/email-login",
                         "/api/user/login-email",
+                        "/api/user/email-updatepw",
+                        "/api/user/password-code",
                         "/api/wire-material/info-with-detection"); // 排除
     }
 }

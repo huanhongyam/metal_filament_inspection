@@ -40,6 +40,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -138,16 +139,16 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         return Result.success(removeById(batchNumber));
     }
     @Override
-    public PageDTO<WireMaterialVO> listPage(Integer current) {
+    public PageDTO<WireMaterialWithMessageVO> listPage(Integer current) {
         Page<WireMaterial> page = new Page<>(current, SystemConstants.DEFAULT_PAGE_SIZE);
         LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
         wrapper.orderByDesc(WireMaterial::getCreateTime);
         IPage<WireMaterial> pageResult = page(page, wrapper);
         // 转换当前页数据为 DTO
-        List<WireMaterialVO> dtoList = pageResult.getRecords().stream()
-                .map(item -> BeanUtil.copyProperties(item, WireMaterialVO.class))
+        List<WireMaterialWithMessageVO> dtoList = pageResult.getRecords().stream()
+                .map(item -> BeanUtil.copyProperties(item, WireMaterialWithMessageVO.class))
                 .collect(Collectors.toList());
-        PageDTO<WireMaterialVO> pageDTO = new PageDTO<>();
+        PageDTO<WireMaterialWithMessageVO> pageDTO = new PageDTO<>();
         pageDTO.setCurrentPage((int) pageResult.getCurrent());
         pageDTO.setPageSize((int) pageResult.getSize());
         pageDTO.setTotal(pageResult.getTotal());
@@ -552,7 +553,21 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
     }
 
     @Override
-    public Result<EarlyWarningVO> triggerEarlyWarning(Integer hours) {
+    public Result<EarlyWarningVO> triggerEarlyWarning(Integer hours,Integer status) throws JsonProcessingException {
+        String cacheKey = CacheKeyConstant.CACHE_TRIGGER_EARLY_WARNING;
+        if (status == 0){
+            String s = stringRedisTemplate.opsForValue().get(cacheKey);
+            if (StrUtil.isNotBlank(s)) {
+                EarlyWarningVO cache = objectMapper.readValue(
+                        s,
+                        objectMapper.getTypeFactory().constructType(EarlyWarningVO.class)
+                );
+                return Result.success(cache);
+            }
+            if ("".equals(s)){
+                return Result.error("暂无预警记录");
+            }
+        }
         if (hours == null || hours <= 0) hours = 24;
 
         // 1. 本地聚合 stats → 构建结构化 top 3
@@ -570,8 +585,8 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         vo.setTopResponsiblePersons(topResponsiblePersons);
         vo.setTopDevices(topDevices);
         vo.setAiAnalysis(aiAnalysis);
-        vo.setAnalysisTime(LocalDateTime.now());
-
+        vo.setAnalysisTime(Instant.now());
+        stringRedisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(vo));
         return Result.success(vo);
     }
 

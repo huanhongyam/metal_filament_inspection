@@ -219,7 +219,6 @@ public class WireMaterialController {
      * 主动触发单条线材评估
      * 权限：管理员（roleId=1）
      */
-    @RequireAdmin
     @Operation(summary = "主动触发单条线材评估")
     @PostMapping("/{batchNumber}/trigger-evaluation")
     public Result<WireMaterialUpdateDTO> triggerEvaluation(@PathVariable Long batchNumber) {
@@ -242,13 +241,13 @@ public class WireMaterialController {
      * 预警分析 — AI 分析
      * 权限：管理员（roleId=1）
      */
-    @RequireAdmin
     @Operation(summary = "触发 AI 预警分析")
     @PostMapping("/early-warning")
     public Result<EarlyWarningVO> triggerEarlyWarning(
-            @RequestParam(value = "hours", defaultValue = "24") Integer hours) {
+            @RequestParam(value = "hours", defaultValue = "24") Integer hours,
+            @RequestParam Integer status) throws JsonProcessingException {
         log.info("管理员触发预警分析，回溯 {} 小时", hours);
-        return wireMaterialService.triggerEarlyWarning(hours);
+        return wireMaterialService.triggerEarlyWarning(hours,status);
     }
 
 }

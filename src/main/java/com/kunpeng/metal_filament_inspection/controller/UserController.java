@@ -14,7 +14,6 @@ import com.kunpeng.metal_filament_inspection.utils.UserHolder;
 import com.kunpeng.metal_filament_inspection.utils.VerificationCodeUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -122,5 +121,35 @@ public class UserController {
                 .id(userId)
                 .build();
         return Result.success(userService.updateById(user));
+    }
+    /**
+     * 发送修改用户密码验证码
+     */
+    @Operation(summary = "发送修改用户密码验证码")
+    @PostMapping("/email-updatepw")
+    public Result<String> updatePassWordEmail(@RequestParam String email){
+        User user = userService.query().eq("email", email).one();
+        if (StrUtil.isBlank(user.getEmail()) ){
+            return Result.error("用户输入邮箱错误");
+        }
+        // 发送验证码
+        String s = verificationCodeUtil.sendVerificationCode(email,"用户修改密码","updatePW");
+        if (StrUtil.isBlank(s)){
+            return Result.error("验证码发送失败，请稍后重试");
+        }
+        return Result.success("发送验证码成功");
+    }
+    @Operation(summary = "忘记用户密码修改")
+    @PutMapping("/password-code")
+    public Result<Boolean> updatePassWordWithCode(@RequestParam("password") String password,
+                                          @RequestParam("email") String email,
+                                          @RequestParam String code){
+        return userService.updatePassWordWithCode(password,email,code);
+    }
+    @Operation(summary = "用户主动修改密码")
+    @PutMapping("/password")
+    public Result<Boolean> updatePassWord(@RequestParam("oldPassWord") String oldPassWord,
+                                          @RequestParam("newPassWord") String newPassWord){
+        return userService.updatePassWord(oldPassWord,newPassWord);
     }
 }
