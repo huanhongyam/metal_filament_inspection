@@ -139,16 +139,16 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         return Result.success(removeById(batchNumber));
     }
     @Override
-    public PageDTO<WireMaterialVO> listPage(Integer current) {
+    public PageDTO<WireMaterialWithMessageVO> listPage(Integer current) {
         Page<WireMaterial> page = new Page<>(current, SystemConstants.DEFAULT_PAGE_SIZE);
         LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
         wrapper.orderByDesc(WireMaterial::getCreateTime);
         IPage<WireMaterial> pageResult = page(page, wrapper);
         // 转换当前页数据为 DTO
-        List<WireMaterialVO> dtoList = pageResult.getRecords().stream()
-                .map(item -> BeanUtil.copyProperties(item, WireMaterialVO.class))
+        List<WireMaterialWithMessageVO> dtoList = pageResult.getRecords().stream()
+                .map(item -> BeanUtil.copyProperties(item, WireMaterialWithMessageVO.class))
                 .collect(Collectors.toList());
-        PageDTO<WireMaterialVO> pageDTO = new PageDTO<>();
+        PageDTO<WireMaterialWithMessageVO> pageDTO = new PageDTO<>();
         pageDTO.setCurrentPage((int) pageResult.getCurrent());
         pageDTO.setPageSize((int) pageResult.getSize());
         pageDTO.setTotal(pageResult.getTotal());
