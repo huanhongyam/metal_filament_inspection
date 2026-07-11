@@ -111,10 +111,14 @@ public class UserController {
     @Operation(summary = "修改用户名")
     @PutMapping("/username")
     public Result<Boolean> updateUsername(@RequestParam("username") String username){
-        String userEmail = userService.query().eq("user_name", username).one().getEmail();
-        if (StrUtil.isNotBlank(userEmail)){
-            return Result.error("用户名已存在");
+        User oldUser = userService.query().eq("user_name", username).one();
+        if (oldUser != null){
+            String userName = oldUser.getUserName();
+            if (StrUtil.isNotBlank(userName)){
+                return Result.error("用户名已存在");
+            }
         }
+
         Long userId = UserHolder.getUserId();
         User user = User.builder()
                 .userName(username)

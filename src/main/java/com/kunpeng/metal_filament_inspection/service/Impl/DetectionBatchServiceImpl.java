@@ -67,7 +67,7 @@ public class DetectionBatchServiceImpl extends ServiceImpl<DetectionBatchMapper,
     @Override
     public PageDTO listPage(Integer current) {
         // 1. WireMaterial 分页
-        PageDTO<WireMaterialVO> wireMaterialPage = wireMaterialService.listPage(current);
+        PageDTO<WireMaterialVO> wireMaterialPage = wireMaterialService.listPageForSum(current);
         List<WireMaterialVO> voList = wireMaterialPage.getRecords();
         // 2. 批量查 DetectionBatch
         List<Long> batchNumbers = voList.stream()
@@ -76,7 +76,7 @@ public class DetectionBatchServiceImpl extends ServiceImpl<DetectionBatchMapper,
         if (!batchNumbers.isEmpty()) {
             LambdaQueryWrapper<DetectionBatch> wrapper = new LambdaQueryWrapper<>();
             wrapper.in(DetectionBatch::getBatchNumber, batchNumbers);
-            allBatches = baseMapper.selectList(wrapper);   // ← selectList，不是 selectPage
+            allBatches = baseMapper.selectList(wrapper);
         } else {
             allBatches = List.of();
         }

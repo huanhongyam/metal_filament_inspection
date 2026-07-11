@@ -1,14 +1,12 @@
 package com.kunpeng.metal_filament_inspection.service.Impl;
 
 import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.stream.CollectorUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.conditions.query.QueryChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -21,7 +19,7 @@ import com.kunpeng.metal_filament_inspection.mapper.WireMaterialMapper;
 import com.kunpeng.metal_filament_inspection.service.IUserService;
 import com.kunpeng.metal_filament_inspection.service.IWireMaterialService;
 import com.kunpeng.metal_filament_inspection.utils.*;
-import jakarta.annotation.Resource;
+
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
@@ -70,8 +68,6 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
     @Value("${agent4j.url}")
     private String agent4jUrl;
 
-    @Resource
-    private WireMaterialStats wireMaterialStats;
     @Override
     public List<WireMaterialDTO> listQueryPage(Integer limit, WireMaterialQueryDTO queryDTO) {
         LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
@@ -155,9 +151,26 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         pageDTO.setRecords(dtoList);
         return pageDTO;
     }
+    @Override
+    public PageDTO<WireMaterialVO> listPageForSum(Integer current) {
+        Page<WireMaterial> page = new Page<>(current, SystemConstants.DEFAULT_PAGE_SIZE);
+        LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
+        wrapper.orderByDesc(WireMaterial::getCreateTime);
+        IPage<WireMaterial> pageResult = page(page, wrapper);
+        // 转换当前页数据为 DTO
+        List<WireMaterialVO> dtoList = pageResult.getRecords().stream()
+                .map(item -> BeanUtil.copyProperties(item, WireMaterialVO.class))
+                .collect(Collectors.toList());
+        PageDTO<WireMaterialVO> pageDTO = new PageDTO<>();
+        pageDTO.setCurrentPage((int) pageResult.getCurrent());
+        pageDTO.setPageSize((int) pageResult.getSize());
+        pageDTO.setTotal(pageResult.getTotal());
+        pageDTO.setRecords(dtoList);
+        return pageDTO;
+    }
 
     @Override
-    public PageDTO<WireMaterialVO> listPageWithFilter(Integer current, String deviceId, String scenarioCode,
+    public PageDTO<WireMaterialWithMessageVO> listPageWithFilter(Integer current, String deviceId, String scenarioCode,
                                                        Long batchNo, String productionMachine, String responsiblePerson,
                                                        String modelEvaluationResult, LocalDate startDate, LocalDate endDate) {
         Page<WireMaterial> page = new Page<>(current, SystemConstants.DEFAULT_PAGE_SIZE);
@@ -195,10 +208,10 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         wrapper.orderByDesc(WireMaterial::getCreateTime);
 
         IPage<WireMaterial> pageResult = page(page, wrapper);
-        List<WireMaterialVO> dtoList = pageResult.getRecords().stream()
-                .map(item -> BeanUtil.copyProperties(item, WireMaterialVO.class))
+        List<WireMaterialWithMessageVO> dtoList = pageResult.getRecords().stream()
+                .map(item -> BeanUtil.copyProperties(item, WireMaterialWithMessageVO.class))
                 .collect(Collectors.toList());
-        PageDTO<WireMaterialVO> pageDTO = new PageDTO<>();
+        PageDTO<WireMaterialWithMessageVO> pageDTO = new PageDTO<>();
         pageDTO.setCurrentPage((int) pageResult.getCurrent());
         pageDTO.setPageSize((int) pageResult.getSize());
         pageDTO.setTotal(pageResult.getTotal());
@@ -316,53 +329,22 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
     }
 
     public List<WireMaterialPassRateVO> getPassRateByYearMonth(String yearMonth) {
-        // 1. 解析年月
         YearMonth ym = YearMonth.parse(yearMonth);
         LocalDateTime start = ym.atDay(1).atStartOfDay();
         LocalDateTime end = ym.atEndOfMonth().atTime(23, 59, 59);
-        // 2. 查询该月所有记录
-        LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
-        wrapper.select(WireMaterial::getCreateTime, WireMaterial::getModelEvaluationResult)
-                .between(WireMaterial::getCreateTime, start, end);
-        List<WireMaterial> records = wireMaterialMapper.selectList(wrapper);
 
-        if (records.isEmpty()) {
-            return Collections.emptyList();
-        }
-        // 3. 用两个 Map 分别统计总数量和通过数量
-        Map<LocalDate, Long> totalMap = new LinkedHashMap<>();
-        Map<LocalDate, Long> passMap = new LinkedHashMap<>();
-        for (WireMaterial record : records) {
-            LocalDate day = record.getCreateTime().toLocalDate();
-            // 累加总数
-            totalMap.put(day, totalMap.getOrDefault(day, 0L) + 1);
-            // 累加通过数（直接比较枚举常量）
-            if (record.getModelEvaluationResult() == WireMaterial.EvaluationResult.PASS) {
-                passMap.put(day, passMap.getOrDefault(day, 0L) + 1);
-            }
-        }
-        // 4. 组装成 VO 列表
-        List<WireMaterialPassRateVO> result = new ArrayList<>();
-        for (Map.Entry<LocalDate, Long> entry : totalMap.entrySet()) {
-            LocalDate day = entry.getKey();
-            Long total = entry.getValue();
-            Long pass = passMap.getOrDefault(day, 0L);
-            Long fail = total - pass;
+        List<WireMaterialPassRateVO> result = wireMaterialMapper.selectPassRateByMonth(start, end);
 
-            BigDecimal rate = BigDecimal.ZERO;
+        for (WireMaterialPassRateVO vo : result) {
+            long total = vo.getPassCount() + vo.getFailCount();
             if (total > 0) {
-                rate = BigDecimal.valueOf(pass)
+                vo.setPassRate(BigDecimal.valueOf(vo.getPassCount())
                         .multiply(BigDecimal.valueOf(100))
-                        .divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP);
+                        .divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP));
+            } else {
+                vo.setPassRate(BigDecimal.ZERO);
             }
-            WireMaterialPassRateVO vo = new WireMaterialPassRateVO();
-            vo.setDay(day);
-            vo.setPassRate(rate);
-            vo.setPassCount(pass);
-            vo.setFailCount(fail);
-            result.add(vo);
         }
-        result.sort(Comparator.comparing(WireMaterialPassRateVO::getDay));
         return result;
     }
 
@@ -592,44 +574,15 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
 
     @Override
     public WireMaterialPhysicalVO QueryWithBatchNoAvg(Long batchNo) {
-        if (batchNo == null){
+        if (batchNo == null) {
             LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
             wrapper.orderByDesc(WireMaterial::getCreateTime)
                     .last("LIMIT 1");
-            WireMaterial wireMaterial = baseMapper.selectOne(wrapper);
-            Long batchNo1 = wireMaterial.getBatchNo();
-            List<WireMaterial> rollList = query().eq("batch_no", batchNo1).list();
-            rollList.forEach(item -> {
-                wireMaterialStats.accept(item);
-            });
-            BigDecimal avgDiameter = wireMaterialStats.getAvgDiameter();
-            BigDecimal avgResistance = wireMaterialStats.getAvgResistance();
-            BigDecimal avgExtensibility = wireMaterialStats.getAvgExtensibility();
-            BigDecimal avgWeight = wireMaterialStats.getAvgWeight();
-            return WireMaterialPhysicalVO.builder()
-                    .batchNo(batchNo1)
-                    .diameter(avgDiameter)
-                    .weight(avgWeight)
-                    .resistance(avgResistance)
-                    .extensibility(avgExtensibility)
-                    .build();
-        }else {
-            List<WireMaterial> rollList = query().eq("batch_no", batchNo).list();
-            rollList.forEach(item -> {
-                wireMaterialStats.accept(item);
-            });
-            BigDecimal avgDiameter = wireMaterialStats.getAvgDiameter();
-            BigDecimal avgResistance = wireMaterialStats.getAvgResistance();
-            BigDecimal avgExtensibility = wireMaterialStats.getAvgExtensibility();
-            BigDecimal avgWeight = wireMaterialStats.getAvgWeight();
-            return WireMaterialPhysicalVO.builder()
-                    .batchNo(batchNo)
-                    .diameter(avgDiameter)
-                    .weight(avgWeight)
-                    .resistance(avgResistance)
-                    .extensibility(avgExtensibility)
-                    .build();
+            WireMaterial latest = baseMapper.selectOne(wrapper);
+            if (latest == null) return null;
+            batchNo = latest.getBatchNo();
         }
+        return wireMaterialMapper.selectAvgByBatchNo(batchNo);
     }
 
     @Override
@@ -681,37 +634,13 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
                     return Result.success(cache);
                 }
 
-                // 查库
-                Page<WireMaterial> page = new Page<>(current, 9);
-                LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
-                wrapper.select(WireMaterial::getBatchNo)
-                        .groupBy(WireMaterial::getBatchNo)
-                        .last("ORDER BY MAX(create_time) DESC");
-                List<WireMaterial> wireMaterials = baseMapper.selectList(page, wrapper);
-                List<WireMaterialPhysicalVO> vos = new ArrayList<>();
-                for (WireMaterial wm : wireMaterials) {
-                    Long batchNo = wm.getBatchNo();
-                    List<WireMaterial> rollList = query().eq("batch_no", batchNo).list();
-                    WireMaterialStats stats = new WireMaterialStats();
-                    rollList.forEach(stats::accept);
-                    String scenarioCode = rollList.isEmpty() ? null : rollList.get(0).getScenarioCode();
-                    vos.add(WireMaterialPhysicalVO.builder()
-                            .batchNo(batchNo)
-                            .diameter(stats.getAvgDiameter())
-                            .weight(stats.getAvgWeight())
-                            .resistance(stats.getAvgResistance())
-                            .extensibility(stats.getAvgExtensibility())
-                            .scenarioCode(scenarioCode)
-                            .build());
-                }
-                Page<WireMaterialPhysicalVO> pageResult = new Page<>(current, 9);
-                pageResult.setRecords(vos);
-                pageResult.setTotal(page.getTotal());
-                pageResult.setPages(page.getPages());
+                // 查库（一次 SQL GROUP BY 聚合，消除 N+1）
+                Page<WireMaterialPhysicalVO> page = new Page<>(current, 9);
+                Page<WireMaterialPhysicalVO> pageResult = (Page<WireMaterialPhysicalVO>) wireMaterialMapper.selectBatchAvgPage(page);
 
                 // 写缓存
                 // 缓存穿透处理
-                if (vos.isEmpty()) {
+                if (pageResult.getRecords().isEmpty()) {
                     stringRedisTemplate.opsForValue().set(cacheKey, "", CacheKeyConstant.CACHE_TTL, TimeUnit.MINUTES);
                     return Result.error("没有记录");
                 }
