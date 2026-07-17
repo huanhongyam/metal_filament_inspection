@@ -120,3 +120,5 @@ tmp/
 *.png
 *.jpng
 *.onnx
+.claude/
+Dockerfile
