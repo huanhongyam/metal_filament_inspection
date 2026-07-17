@@ -246,7 +246,6 @@ public class WireMaterialController {
     public Result<EarlyWarningVO> triggerEarlyWarning(
             @RequestParam(value = "hours", defaultValue = "24") Integer hours,
             @RequestParam Integer status) throws JsonProcessingException {
-        log.info("管理员触发预警分析，回溯 {} 小时", hours);
         return wireMaterialService.triggerEarlyWarning(hours,status);
     }
 

@@ -6,7 +6,7 @@ public class SystemConstants {
     public static final String DETECTION_BATCH_PREFIX = "detectionBatch";
     public static final String AGENT_TOKEN = "eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZ2VudCIsInVzZXJJZCI6MTAwLCJleHAiOjE3ODIyOTYwMTN9.Mpmsy1EUne2BpBZ02YIKoYgf3w6GP_N-uVRsIZky6wGEH8g9I1EVK-jYSHWka8qx";
     public static final String HUAWEI_IOT_MESSAGE_PREFIX1 = "/notify_data/body/services/0/properties/wire";
-    public static final String HUAWEI_IOT_MESSAGE_PREFIX2 = "/notify_data/body/services/0/properties/wire/2";
+    public static final String HUAWEI_IOT_MESSAGE_PREFIX2 = "/2";
     public static final String HUAWEI_IOT_MESSAGE_SURFACE_PREFIX = "/notify_data/body/services/0/properties/surface_data";
     public static final String HUAWEI_IOT_MESSAGE_AGENT_PREFIX = "/notify_data/body/services/0/properties/question";
     public static final String RABBITMQ_EXCHANGE_DETECT_TASK = "detect.exchange";

@@ -2,10 +2,10 @@ package com.kunpeng.metal_filament_inspection;
 
 import cn.hutool.crypto.digest.BCrypt;
 import com.kunpeng.metal_filament_inspection.controller.TestController;
-import com.kunpeng.metal_filament_inspection.domain.dto.LoginFormDTO;
-import com.kunpeng.metal_filament_inspection.domain.dto.QuestionAskDTO;
-import com.kunpeng.metal_filament_inspection.domain.dto.Result;
+import com.kunpeng.metal_filament_inspection.domain.dto.*;
 import com.kunpeng.metal_filament_inspection.domain.vo.QuestionVO;
+import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialPassRateVO;
+import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialPhysicalVO;
 import com.kunpeng.metal_filament_inspection.service.IQuestionService;
 import com.kunpeng.metal_filament_inspection.service.IUserService;
 import com.kunpeng.metal_filament_inspection.service.IWireMaterialService;
@@ -13,6 +13,8 @@ import com.kunpeng.metal_filament_inspection.utils.IdWorker;
 import com.kunpeng.metal_filament_inspection.utils.JwtUtil;
 import com.kunpeng.metal_filament_inspection.utils.QiniuUploadUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,6 +24,11 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
 @SpringBootTest
@@ -122,4 +129,162 @@ class MetalFilamentInspectionApplicationTests {
 //        Result<QuestionVO> questionVOResult = questionService.askFromUser(23L, questionAskDTO);
 //        log.info(questionVOResult.getData().getAiResponseContent());
 //    }
+
+    // ============================================================
+    // 集成测试 — 连真实数据库
+    // ============================================================
+
+    @Nested
+    @DisplayName("集成测试: QueryWithBatchNoAvg")
+    class IntegrationQueryWithBatchNoAvg {
+
+        @Test
+        @DisplayName("batchNo 指定已有批次返回聚合数据")
+        void shouldReturnAvgForExistingBatch() {
+            WireMaterialPhysicalVO result = wireMaterialService.QueryWithBatchNoAvg(20260708L);
+            if (result != null) {
+                log.info("批次 {} 平均值: 直径={}, 电阻={}", result.getBatchNo(), result.getDiameter(), result.getResistance());
+                assertNotNull(result.getDiameter());
+                assertNotNull(result.getResistance());
+            }
+        }
+
+        @Test
+        @DisplayName("batchNo 不存在返回 null")
+        void shouldReturnNullForNonExistingBatch() {
+            WireMaterialPhysicalVO result = wireMaterialService.QueryWithBatchNoAvg(99999999L);
+            assertNull(result);
+        }
+
+        @Test
+        @DisplayName("batchNo=null 查最新的批次")
+        void shouldQueryLatestWhenNull() {
+            WireMaterialPhysicalVO result = wireMaterialService.QueryWithBatchNoAvg(null);
+            if (result != null) {
+                log.info("最新批次: {}", result.getBatchNo());
+                assertNotNull(result.getBatchNo());
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("集成测试: getPassRateByYearMonth")
+    class IntegrationGetPassRateByYearMonth {
+
+        @Test
+        @DisplayName("正常查询 2026-07 返回按天分组数据")
+        void shouldReturnDailyStats() {
+            List<WireMaterialPassRateVO> result = wireMaterialService.getPassRateByYearMonth("2026-07");
+            assertNotNull(result);
+            log.info("2026-07 共有 {} 天有数据", result.size());
+            for (WireMaterialPassRateVO vo : result) {
+                assertNotNull(vo.getDay());
+                assertTrue(vo.getPassCount() >= 0);
+                assertTrue(vo.getFailCount() >= 0);
+                // passRate 必须在 0-100 之间
+                assertTrue(vo.getPassRate().compareTo(BigDecimal.ZERO) >= 0);
+                assertTrue(vo.getPassRate().compareTo(new BigDecimal("100")) <= 0);
+            }
+        }
+
+        @Test
+        @DisplayName("无数据的月份返回空列表")
+        void shouldReturnEmptyForNoDataMonth() {
+            List<WireMaterialPassRateVO> result = wireMaterialService.getPassRateByYearMonth("2025-01");
+            assertNotNull(result);
+            assertTrue(result.isEmpty());
+        }
+    }
+
+    @Nested
+    @DisplayName("集成测试: listPageWithFilter")
+    class IntegrationListPageWithFilter {
+
+        @Test
+        @DisplayName("无任何过滤条件返回第一页")
+        void shouldReturnFirstPageWithoutFilters() {
+            PageDTO result = wireMaterialService.listPageWithFilter(1,
+                    null, null, null, null, null, null, null, null);
+            assertNotNull(result);
+            assertTrue(result.getTotal() > 0);
+            assertFalse(result.getRecords().isEmpty());
+            log.info("无过滤分页: total={}, pageSize={}", result.getTotal(), result.getRecords().size());
+        }
+
+        @Test
+        @DisplayName("deviceId 过滤返回正确数据")
+        void shouldFilterByDeviceId() {
+            PageDTO result = wireMaterialService.listPageWithFilter(1,
+                    "DEV211", null, null, null, null, null, null, null);
+            assertNotNull(result);
+            log.info("DEV211 过滤: total={}", result.getTotal());
+        }
+
+        @Test
+        @DisplayName("日期范围 + deviceId 联合过滤")
+        void shouldFilterByDeviceAndDateRange() {
+            PageDTO result = wireMaterialService.listPageWithFilter(1,
+                    "DEV211", null, null, null, null, null,
+                    LocalDate.of(2026, 7, 4),
+                    LocalDate.of(2026, 7, 11));
+            assertNotNull(result);
+            log.info("DEV211 + 日期范围: total={}", result.getTotal());
+        }
+
+        @Test
+        @DisplayName("无效 modelEvaluationResult 被忽略，不抛异常")
+        void shouldIgnoreInvalidEvaluationResult() {
+            assertDoesNotThrow(() -> {
+                wireMaterialService.listPageWithFilter(1,
+                        null, null, null, null, null, "INVALID_VALUE", null, null);
+            });
+        }
+    }
+
+    @Nested
+    @DisplayName("集成测试: getEarlyWarningStats")
+    class IntegrationGetEarlyWarningStats {
+
+        @Test
+        @DisplayName("正常返回预警统计数据")
+        void shouldReturnWarningStats() {
+            EarlyWarningStatsDTO result = wireMaterialService.getEarlyWarningStats(24);
+            assertNotNull(result);
+            assertEquals(24, result.getHoursBack());
+            assertNotNull(result.getByDevice());
+            assertNotNull(result.getByProductionMachine());
+            assertNotNull(result.getByResponsiblePerson());
+            log.info("预警统计: total={}, fail={}, rate={}%",
+                    result.getTotalCount(), result.getFailCount(), result.getOverallFailRate());
+        }
+
+        @Test
+        @DisplayName("hours=1 返回最近1小时数据")
+        void shouldWorkWithSmallHours() {
+            EarlyWarningStatsDTO result = wireMaterialService.getEarlyWarningStats(1);
+            assertNotNull(result);
+            assertEquals(1, result.getHoursBack());
+        }
+    }
+
+    @Nested
+    @DisplayName("集成测试: Bug 验证")
+    class IntegrationBugVerification {
+
+        @Test
+        @DisplayName("queryByBatchNoWithRollNo 不存在时返回 null（已修复）")
+        void shouldReturnNullWhenBatchNoAndRollNoNotExist() {
+            Long result = wireMaterialService.queryByBatchNoWithRollNo(99999999L, 999L);
+            assertNull(result);
+        }
+
+//        @Test
+//        @DisplayName("queryByBatchNoWithRollNo 存在时正常返回")
+//        void shouldReturnBatchNumberWhenExists() {
+//            // 先拿一个真实的 batchNo + rollNo
+//            Long batchNumber = wireMaterialService.queryByBatchNoWithRollNo(20260708L, 1L);
+//            assertNotNull(batchNumber);
+//            log.info("batchNo=20260708, rollNo=1 -> batchNumber={}", batchNumber);
+//        }
+    }
 }

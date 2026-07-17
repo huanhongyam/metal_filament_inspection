@@ -3,6 +3,8 @@ package com.kunpeng.metal_filament_inspection.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.kunpeng.metal_filament_inspection.domain.dto.EarlyWarningStatsDTO;
+import com.kunpeng.metal_filament_inspection.domain.dto.EarlyWarningSummaryDTO;
 import com.kunpeng.metal_filament_inspection.domain.entity.WireMaterial;
 import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialPassRateVO;
 import com.kunpeng.metal_filament_inspection.domain.vo.WireMaterialPhysicalVO;
@@ -51,4 +53,23 @@ public interface WireMaterialMapper extends BaseMapper<WireMaterial> {
             "MAX(scenario_code) as scenario_code " +
             "FROM wire_material GROUP BY batch_no ORDER BY MAX(create_time) DESC")
     IPage<WireMaterialPhysicalVO> selectBatchAvgPage(IPage<WireMaterialPhysicalVO> page);
+
+    /**
+     * 预警统计 — 总行数和不合格数
+     */
+    @Select("SELECT COUNT(*) as totalCount, " +
+            "COALESCE(SUM(CASE WHEN model_evaluation_result = 'FAIL' THEN 1 ELSE 0 END), 0) as failCount " +
+            "FROM wire_material WHERE create_time >= #{since}")
+    EarlyWarningSummaryDTO selectWarningSummary(@Param("since") LocalDateTime since);
+
+    /**
+     * 预警统计 — 按列分组不合格情况（列名由调用方硬编码传入，不受用户输入控制）
+     */
+    @Select("SELECT COALESCE(${column}, '未填写') as name, " +
+            "COUNT(*) as totalCount, " +
+            "SUM(CASE WHEN model_evaluation_result = 'FAIL' THEN 1 ELSE 0 END) as failCount " +
+            "FROM wire_material WHERE create_time >= #{since} " +
+            "GROUP BY ${column}")
+    List<EarlyWarningStatsDTO.GroupStats> selectWarningGroupBy(@Param("since") LocalDateTime since,
+                                                               @Param("column") String column);
 }

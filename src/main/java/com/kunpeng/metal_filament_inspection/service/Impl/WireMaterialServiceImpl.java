@@ -175,6 +175,13 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
                                                        String modelEvaluationResult, LocalDate startDate, LocalDate endDate) {
         Page<WireMaterial> page = new Page<>(current, SystemConstants.DEFAULT_PAGE_SIZE);
         LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
+        // 查列表需要的列
+        wrapper.select(WireMaterial::getBatchNumber, WireMaterial::getDeviceId,
+                WireMaterial::getDiameter, WireMaterial::getResistance, WireMaterial::getExtensibility,
+                WireMaterial::getWeight, WireMaterial::getProductionMachine, WireMaterial::getResponsiblePerson,
+                WireMaterial::getProcessType, WireMaterial::getScenarioCode, WireMaterial::getBatchNo,
+                WireMaterial::getRollNo, WireMaterial::getModelConfidence, WireMaterial::getModelEvaluationResult,
+                WireMaterial::getEvaluationMessage, WireMaterial::getCreateTime);
 
         if (StringUtils.hasText(deviceId)) {
             wrapper.eq(WireMaterial::getDeviceId, deviceId);
@@ -298,12 +305,11 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         if (dtoList == null || dtoList.isEmpty()) {
             return Result.error("评估列表不能为空");
         }
-        int successCount = 0;
-        for (WireMaterialUpdateDTO dto : dtoList) {
-            UpdateWrapper<WireMaterial> updateWrapper = Wrappers.update();
-            updateWrapper.eq("batch_number", dto.getBatchNumber());
 
+        List<WireMaterial> entities = new ArrayList<>();
+        for (WireMaterialUpdateDTO dto : dtoList) {
             WireMaterial entity = new WireMaterial();
+            entity.setBatchNumber(dto.getBatchNumber());
             entity.setEvaluationMessage(dto.getEvaluationMessage());
             entity.setModelConfidence(dto.getModelConfidence());
 
@@ -316,16 +322,12 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
                     continue;
                 }
             }
-
-            boolean updated = update(entity, updateWrapper);
-            if (updated) {
-                successCount++;
-            } else {
-                log.warn("批次 {} 不存在，跳过", dto.getBatchNumber());
-            }
+            entities.add(entity);
         }
-        log.info("Agent 批量评估完成：{}/{} 条成功", successCount, dtoList.size());
-        return Result.success(successCount);
+
+        updateBatchById(entities);
+        log.info("Agent 批量评估完成：{}/{} 条", entities.size(), dtoList.size());
+        return Result.success(entities.size());
     }
 
     public List<WireMaterialPassRateVO> getPassRateByYearMonth(String yearMonth) {
@@ -350,8 +352,8 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
 
     @Override
     public Long queryByBatchNoWithRollNo(Long batchNo, Long rollNo) {
-        Long batchNumber = query().eq("batch_no", batchNo).eq("roll_no", rollNo).one().getBatchNumber();
-        return batchNumber;
+        WireMaterial wm = query().eq("batch_no", batchNo).eq("roll_no", rollNo).one();
+        return wm != null ? wm.getBatchNumber() : null;
     }
 
     @Override
@@ -473,65 +475,24 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
         if (hours == null || hours <= 0) hours = 24;
         LocalDateTime since = LocalDateTime.now().minusHours(hours);
 
-        LambdaQueryWrapper<WireMaterial> wrapper = new LambdaQueryWrapper<>();
-        wrapper.select(WireMaterial::getProductionMachine, WireMaterial::getResponsiblePerson,
-                        WireMaterial::getDeviceId, WireMaterial::getModelEvaluationResult)
-                .ge(WireMaterial::getCreateTime, since);
-        List<WireMaterial> records = list(wrapper);
-
-        int total = records.size();
-        long failTotal = records.stream()
-                .filter(r -> r.getModelEvaluationResult() == WireMaterial.EvaluationResult.FAIL)
-                .count();
+        EarlyWarningSummaryDTO summary = wireMaterialMapper.selectWarningSummary(since);
+        long total = summary != null ? summary.getTotalCount() : 0;
+        long fail = summary != null ? summary.getFailCount() : 0;
 
         BigDecimal overallRate = total > 0
-                ? BigDecimal.valueOf(failTotal).multiply(BigDecimal.valueOf(100))
+                ? BigDecimal.valueOf(fail).multiply(BigDecimal.valueOf(100))
                     .divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
 
         EarlyWarningStatsDTO dto = new EarlyWarningStatsDTO();
         dto.setHoursBack(hours);
-        dto.setTotalCount(total);
-        dto.setFailCount((int) failTotal);
+        dto.setTotalCount((int) total);
+        dto.setFailCount((int) fail);
         dto.setOverallFailRate(overallRate);
-        dto.setByProductionMachine(aggregateByField(records, "productionMachine"));
-        dto.setByResponsiblePerson(aggregateByField(records, "responsiblePerson"));
-        dto.setByDevice(aggregateByField(records, "deviceId"));
+        dto.setByProductionMachine(wireMaterialMapper.selectWarningGroupBy(since, "production_machine"));
+        dto.setByResponsiblePerson(wireMaterialMapper.selectWarningGroupBy(since, "responsible_person"));
+        dto.setByDevice(wireMaterialMapper.selectWarningGroupBy(since, "device_id"));
         return dto;
-    }
-
-    private List<EarlyWarningStatsDTO.GroupStats> aggregateByField(List<WireMaterial> records, String field) {
-        Map<String, long[]> map = new LinkedHashMap<>();
-        for (WireMaterial r : records) {
-            String key = switch (field) {
-                case "productionMachine" -> r.getProductionMachine();
-                case "responsiblePerson" -> r.getResponsiblePerson();
-                case "deviceId" -> r.getDeviceId();
-                default -> null;
-            };
-            if (key == null || key.isEmpty()) key = "未填写";
-            map.computeIfAbsent(key, k -> new long[2]);
-            map.get(key)[0]++; // total
-            if (r.getModelEvaluationResult() == WireMaterial.EvaluationResult.FAIL) {
-                map.get(key)[1]++; // fail
-            }
-        }
-        return map.entrySet().stream()
-                .map(e -> {
-                    EarlyWarningStatsDTO.GroupStats gs = new EarlyWarningStatsDTO.GroupStats();
-                    gs.setName(e.getKey());
-                    long tot = e.getValue()[0];
-                    long fail = e.getValue()[1];
-                    gs.setTotalCount(tot);
-                    gs.setFailCount(fail);
-                    gs.setFailRate(tot > 0
-                            ? BigDecimal.valueOf(fail).multiply(BigDecimal.valueOf(100))
-                                .divide(BigDecimal.valueOf(tot), 2, RoundingMode.HALF_UP)
-                            : BigDecimal.ZERO);
-                    return gs;
-                })
-                .sorted((a, b) -> b.getFailRate().compareTo(a.getFailRate()))
-                .collect(Collectors.toList());
     }
 
     @Override
@@ -551,7 +512,7 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
             }
         }
         if (hours == null || hours <= 0) hours = 24;
-
+        log.info("管理员触发预警分析，回溯 {} 小时", hours);
         // 1. 本地聚合 stats → 构建结构化 top 3
         EarlyWarningStatsDTO stats = getEarlyWarningStats(hours);
         List<EarlyWarningVO.WarningItem> topProductionMachines = buildTop3(stats.getByProductionMachine());
@@ -592,6 +553,7 @@ public class WireMaterialServiceImpl extends ServiceImpl<WireMaterialMapper, Wir
             wrapper.orderByDesc(WireMaterial::getCreateTime)
                     .last("LIMIT 1");
             WireMaterial wireMaterial = baseMapper.selectOne(wrapper);
+            if (wireMaterial == null) return List.of();
             Long batchNo1 = wireMaterial.getBatchNo();
             List<WireMaterial> rollList = query().eq("batch_no", batchNo1).list().stream().limit(10).toList();
             List<WireMaterialPhysicalVO> wireMaterialPhysicalVOS = rollList.stream().map(item -> {

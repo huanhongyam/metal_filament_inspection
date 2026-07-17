@@ -2,6 +2,7 @@ package com.kunpeng.metal_filament_inspection.domain.vo;
 
 import lombok.Data;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 public class DetectionBatchSummaryVO {
@@ -13,4 +14,5 @@ public class DetectionBatchSummaryVO {
     private Integer metalBurrCount;
     private Integer scuffCount;
     private String modelEvaluationResult;
+    private List<String> imgUrls;
 }
