@@ -62,7 +62,7 @@ public class IoTAmqpAddListener {
                 stringRedisTemplate.delete(CacheKeyConstant.CACHE_LIST_WITH_BATCH_AVG+2);
                 // 异步发送检测任务
                 // 定位到 services[0].properties.wire.2
-                JsonNode dataNode2 = root.at(SystemConstants.HUAWEI_IOT_MESSAGE_PREFIX2);
+                JsonNode dataNode2 = dataNode1.at(SystemConstants.HUAWEI_IOT_MESSAGE_PREFIX2);
                 if (dataNode2.isMissingNode()) {
                     log.info("未找到任务时间节点，不触发检测任务");
                     return;

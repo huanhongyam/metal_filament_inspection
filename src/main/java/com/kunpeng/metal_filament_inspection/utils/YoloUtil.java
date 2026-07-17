@@ -114,7 +114,7 @@ public class YoloUtil {
                                         double scale, int padLeft, int padTop) {
         int numAnchors = output[0][0].length;   // 8400
         int numChannels = output[0].length;     // 应为 9
-        int numClasses = numChannels - 4;       // YOLOv8: 9 - 4 = 5 ✅
+        int numClasses = numChannels - 4;       // YOLOv11: 9 - 4 = 5 ✅
 
         if (numClasses != CLASS_NAMES.size()) {
             log.warn("模型类别数({})与配置类别数({})不一致，按模型实际输出处理",
@@ -124,7 +124,7 @@ public class YoloUtil {
         List<DetectionBox> boxes = new ArrayList<>();
 
         for (int i = 0; i < numAnchors; i++) {
-            // YOLOv8: index 0~3 是 xywh（已经是 640x640 坐标系下）
+            // YOLOv11: index 0~3 是 xywh（已经是 640x640 坐标系下）
             float xCenter = output[0][0][i];
             float yCenter = output[0][1][i];
             float w       = output[0][2][i];
@@ -141,7 +141,7 @@ public class YoloUtil {
                 }
             }
 
-            // YOLOv8 没有 objectness，类别概率直接作为置信度
+            // YOLOv11 没有 objectness，类别概率直接作为置信度
             float confidence = maxProb;
 
             if (confidence >= yoloConfig.getConfidenceThreshold() && maxClassId >= 0) {
